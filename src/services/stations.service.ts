@@ -54,9 +54,9 @@ function applyFilters(stations: Station[], filters: StationFilters = {}) {
 
 export class StationsService {
   async list(filters: StationFilters = {}) {
-    if (!supabase.isConfigured) {
-      return applyFilters(SAMPLE_STATIONS, filters);
-    }
+    // if (!supabase.isConfigured) {
+    // }
+    return applyFilters(SAMPLE_STATIONS, filters);
 
     const params: Record<string, string> = {
       select: "*",
@@ -83,9 +83,9 @@ return applyFilters(rows.map(normalizeStation), filters);
   }
 
   async findById(id: string) {
-    if (!supabase.isConfigured) {
-      return SAMPLE_STATIONS.find((station) => station.id === id) || null;
-    }
+    return SAMPLE_STATIONS.find((station) => station.id === id) || null;
+    // if (!supabase.isConfigured) {
+    // }
 
     const rows = await supabase.get<Station[]>("stations", {
       select: "*",
