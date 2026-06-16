@@ -3,7 +3,7 @@ import type { LatLngLiteral } from "@/src/types";
 export const appConfig = {
   name: process.env.NEXT_PUBLIC_APP_NAME || "EV Charging Pakistan",
   theme: {
-    primary: process.env.NEXT_PUBLIC_PRIMARY_COLOR || "#114B5F",
+    primary: process.env.NEXT_PUBLIC_PRIMARY_COLOR || "#14532D",
     secondary: process.env.NEXT_PUBLIC_SECONDARY_COLOR || "#FFFFFF",
   },
   google: {
