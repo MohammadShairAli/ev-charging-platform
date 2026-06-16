@@ -68,8 +68,18 @@ export class StationsService {
       params.or = `name.ilike.*${query}*,address.ilike.*${query}*,operator.ilike.*${query}*`;
     }
 
-    const rows = await supabase.get<Station[]>("stations", params);
-    return applyFilters(rows.map(normalizeStation), filters);
+    // const rows = await supabase.get<Station[]>("stations", params);
+    // return applyFilters(rows.map(normalizeStation), filters);
+    let rows: Station[] = [];
+
+try {
+  rows = await supabase.get<Station[]>("stations", params);
+} catch (e) {
+  console.error("Supabase failed:", e);
+  rows = [];
+}
+
+return applyFilters(rows.map(normalizeStation), filters);
   }
 
   async findById(id: string) {

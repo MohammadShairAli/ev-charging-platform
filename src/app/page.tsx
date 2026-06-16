@@ -8,7 +8,7 @@ import { ROUTES } from "@/src/lib/constants";
 import { stationsService } from "@/src/services/stations.service";
 
 export default async function HomePage() {
-  const stations = await stationsService.list();
+  const stations = await stationsService.list() ?? [];
   const nearbyStations = stations.slice(0, 3);
 
   return (
