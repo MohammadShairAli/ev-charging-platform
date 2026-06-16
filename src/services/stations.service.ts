@@ -55,8 +55,9 @@ function applyFilters(stations: Station[], filters: StationFilters = {}) {
 export class StationsService {
   async list(filters: StationFilters = {}) {
     // if (!supabase.isConfigured) {
-    // }
-    return applyFilters(SAMPLE_STATIONS, filters);
+    if (true) {
+      return applyFilters(SAMPLE_STATIONS, filters);
+    }
 
     const params: Record<string, string> = {
       select: "*",
@@ -64,7 +65,7 @@ export class StationsService {
     };
 
     if (filters.q?.trim()) {
-      const query = filters.q.trim().replaceAll(",", " ");
+      const query = filters.q?.trim().replaceAll(",", " ");
       params.or = `name.ilike.*${query}*,address.ilike.*${query}*,operator.ilike.*${query}*`;
     }
 
@@ -83,9 +84,11 @@ return applyFilters(rows.map(normalizeStation), filters);
   }
 
   async findById(id: string) {
-    return SAMPLE_STATIONS.find((station) => station.id === id) || null;
+
     // if (!supabase.isConfigured) {
-    // }
+    if (true) {
+      return SAMPLE_STATIONS.find((station) => station.id === id) || null;
+    }
 
     const rows = await supabase.get<Station[]>("stations", {
       select: "*",
