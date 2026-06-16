@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { GoogleMap } from "@/src/components/map/GoogleMap";
 import { SearchBar } from "@/src/components/shared/SearchBar";
 import { StationList } from "@/src/components/station/StationList";
