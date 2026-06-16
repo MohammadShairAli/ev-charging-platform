@@ -8,9 +8,10 @@ type SearchBarProps = {
   action?: string;
   defaultValue?: string;
   compact?: boolean;
+  className?: string;
 };
 
-export function SearchBar({ action = ROUTES.stations, defaultValue = "", compact }: SearchBarProps) {
+export function SearchBar({ action = ROUTES.stations, defaultValue = "", compact, className = "" }: SearchBarProps) {
   const router = useRouter();
   const params = useSearchParams();
   const [query, setQuery] = useState(defaultValue);
@@ -25,20 +26,24 @@ export function SearchBar({ action = ROUTES.stations, defaultValue = "", compact
       nextParams.delete("q");
     }
 
-    router.push(`${action}?${nextParams.toString()}`);
+    const nextQuery = nextParams.toString();
+    router.push(nextQuery ? `${action}?${nextQuery}` : action);
   }
 
   return (
-    <form onSubmit={onSubmit} className={`flex w-full gap-2 ${compact ? "max-w-2xl" : "max-w-3xl"}`}>
+    <form
+      onSubmit={onSubmit}
+      className={`grid w-full gap-2 rounded-lg border border-border bg-secondary/95 p-1.5 shadow-[0_18px_45px_rgba(7,21,18,0.12)] sm:grid-cols-[1fr_auto] ${compact ? "max-w-2xl" : "max-w-3xl"} ${className}`}
+    >
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search by city, address, or operator"
-        className="min-h-12 flex-1 rounded-md border border-border bg-secondary px-4 text-sm text-foreground shadow-sm"
+        className="min-h-12 min-w-0 rounded-lg border border-transparent bg-transparent px-4 text-base text-foreground placeholder:text-muted focus:border-accent/50 sm:text-sm"
       />
       <button
         type="submit"
-        className="min-h-12 rounded-md bg-primary px-5 text-sm font-semibold text-secondary transition hover:bg-primary-hover"
+        className="min-h-12 rounded-lg bg-[linear-gradient(135deg,var(--primary),#00a889)] px-5 text-sm font-semibold text-secondary shadow-[0_12px_26px_rgba(0,194,168,0.22)] transition hover:brightness-105"
       >
         Search
       </button>

@@ -20,14 +20,18 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
   const coordinates = stationCoordinates(station);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-        <div>
-          <p className="text-sm font-semibold text-primary">{station.operator || "Operator unavailable"}</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-normal text-foreground">{station.name}</h1>
-          <p className="mt-3 text-sm leading-6 text-muted">{station.address || "Address unavailable"}</p>
+    <section className="mx-0 max-w-[24rem] px-4 py-8 sm:mx-auto sm:max-w-7xl sm:px-6 sm:py-10 lg:px-8">
+      <div className="grid gap-6 lg:grid-cols-[0.86fr_1.14fr] lg:items-start">
+        <div className="rounded-lg border border-border bg-surface p-5 shadow-[0_18px_45px_rgba(7,21,18,0.08)] sm:p-6">
+          <div className="inline-flex rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-primary">
+            {station.operator || "Operator unavailable"}
+          </div>
+          <h1 className="mt-3 text-3xl font-bold leading-tight tracking-normal text-foreground sm:text-4xl">
+            {station.name}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-muted sm:text-base">{station.address || "Address unavailable"}</p>
 
-          <dl className="mt-7 grid gap-4 rounded-md border border-border bg-secondary p-5 text-sm">
+          <dl className="mt-7 grid gap-4 rounded-lg border border-border bg-background p-4 text-sm sm:p-5">
             <DetailRow label="Google rating" value={station.rating ? station.rating.toFixed(1) : "No rating"} />
             <DetailRow label="Phone" value={station.phone || "Unavailable"} />
             <DetailRow
@@ -48,17 +52,19 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
             />
           </dl>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
             {directionsUrl ? <ButtonLink href={directionsUrl} external>Get Directions</ButtonLink> : null}
-            <ButtonLink href="/charging-stations">Back to Stations</ButtonLink>
+            <ButtonLink href="/charging-stations" variant="secondary">Back to Stations</ButtonLink>
           </div>
         </div>
-        <GoogleMap
-          stations={[station]}
-          selectedStationId={station.id}
-          center={coordinates || undefined}
-          zoom={coordinates ? 14 : undefined}
-        />
+        <div className="lg:sticky lg:top-24">
+          <GoogleMap
+            stations={[station]}
+            selectedStationId={station.id}
+            center={coordinates || undefined}
+            zoom={coordinates ? 14 : undefined}
+          />
+        </div>
       </div>
     </section>
   );
@@ -66,7 +72,7 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="grid gap-1 sm:grid-cols-[150px_1fr]">
+    <div className="grid gap-1 border-b border-border pb-3 last:border-0 last:pb-0 sm:grid-cols-[150px_1fr]">
       <dt className="font-medium text-muted">{label}</dt>
       <dd className="text-foreground">{value}</dd>
     </div>

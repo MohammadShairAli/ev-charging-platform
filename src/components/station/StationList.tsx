@@ -13,7 +13,7 @@ export function StationList({ stations }: StationListProps) {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 sm:gap-5">
       {stations.map((station) => (
         <StationCard key={station.id} station={station} />
       ))}

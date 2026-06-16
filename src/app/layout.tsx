@@ -29,7 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} style={themeStyle}>
-      <body className="flex min-h-screen flex-col">
+      <body className="flex min-h-screen flex-col overflow-x-hidden">
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

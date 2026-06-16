@@ -1,13 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #1f2937;
-  --primary: #14532d;
-  --primary-hover: #166534;
+  --background: #f4fbf7;
+  --foreground: #071512;
+  --primary: #0b5b3a;
+  --primary-hover: #0f7048;
   --secondary: #ffffff;
-  --border: #e5e7eb;
-  --muted: #6b7280;
+  --surface: #ffffff;
+  --surface-strong: #eaf7f1;
+  --border: #d7e7de;
+  --muted: #60736c;
+  --accent: #00c2a8;
+  --accent-soft: #dffcf5;
+  --ink: #06130f;
 }
 
 @theme inline {
@@ -16,8 +21,13 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
   --color-border: var(--border);
   --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ink: var(--ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -28,11 +38,19 @@
 
 html {
   background: var(--background);
+  text-size-adjust: 100%;
 }
 
 body {
   min-height: 100vh;
-  background: var(--background);
+  overflow-x: hidden;
+  background:
+    linear-gradient(180deg, var(--background) 0%, #ffffff 48%, #eefaf5 100%);
+  color: var(--foreground);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
   color: var(--foreground);
 }
 
@@ -41,4 +59,35 @@ button,
 input,
 select {
   outline-color: var(--primary);
+}
+
+.energy-grid {
+  position: relative;
+  overflow: hidden;
+}
+
+.energy-grid::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent 82%);
+}
+
+.energy-grid > * {
+  position: relative;
+}
+
+.map-grid {
+  background:
+    linear-gradient(135deg, rgba(0, 194, 168, 0.22), transparent 38%),
+    linear-gradient(315deg, rgba(217, 255, 112, 0.18), transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(135deg, #05130f 0%, #0b3a2c 54%, #061c17 100%);
+  background-size: auto, auto, 28px 28px, 28px 28px, auto;
 }
