@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Star } from "@/src/components/ui/Star";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
 import { ROUTES } from "@/src/lib/constants";
@@ -10,23 +11,28 @@ type StationCardProps = {
 
 export function StationCard({ station }: StationCardProps) {
   return (
-    <article className="group relative overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-[0_16px_38px_rgba(7,21,18,0.07)] transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_22px_50px_rgba(7,21,18,0.11)] sm:p-5">
-      <span className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--accent),var(--primary))]" />
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="mb-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-primary">
-            {station.operator || "Operator unavailable"}
-          </div>
-          <h3 className="text-lg font-semibold leading-6 text-foreground">{station.name}</h3>
-          <p className="mt-2 text-sm leading-6 text-muted">{station.address || "Address unavailable"}</p>
-          <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5">
-              <Star /> {station.rating ? station.rating.toFixed(1) : "No rating"}
-            </span>
-            <span className="rounded-full border border-border bg-background px-3 py-1.5">{formatDistance(station.distanceKm)}</span>
-          </div>
+    <article className="group rounded-2xl border border-border bg-surface p-4 transition hover:border-primary sm:p-5">
+      <div className="flex items-start gap-4">
+        <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface-strong">
+          <Image src="/icon.png" alt="" width={46} height={46} className="h-11 w-11 object-contain" />
         </div>
-        <ButtonLink href={`${ROUTES.stations}/${station.id}`} className="sm:self-start">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+            {station.operator || "Operator unavailable"}
+          </p>
+          <h3 className="mt-1 text-lg font-semibold leading-6 text-foreground">{station.name}</h3>
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{station.address || "Address unavailable"}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <Star /> {station.rating ? station.rating.toFixed(1) : "No rating"}
+          </span>
+          <span>{formatDistance(station.distanceKm)}</span>
+        </div>
+        <ButtonLink href={`${ROUTES.stations}/${station.id}`} variant="secondary" className="sm:self-start">
           View Details
         </ButtonLink>
       </div>

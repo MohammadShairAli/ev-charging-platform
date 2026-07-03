@@ -25,6 +25,7 @@ export function SearchBar({ action = ROUTES.stations, defaultValue = "", compact
     } else {
       nextParams.delete("q");
     }
+    nextParams.delete("page");
 
     const nextQuery = nextParams.toString();
     router.push(nextQuery ? `${action}?${nextQuery}` : action);
@@ -33,7 +34,7 @@ export function SearchBar({ action = ROUTES.stations, defaultValue = "", compact
   return (
     <form
       onSubmit={onSubmit}
-      className={`grid w-full gap-2 rounded-lg border border-border bg-secondary/95 p-1.5 shadow-[0_18px_45px_rgba(7,21,18,0.12)] sm:grid-cols-[1fr_auto] ${compact ? "max-w-2xl" : "max-w-3xl"} ${className}`}
+      className={`grid w-full gap-2 rounded-lg border border-border bg-secondary p-1.5 sm:grid-cols-[1fr_auto] ${compact ? "max-w-2xl" : "max-w-3xl"} ${className}`}
     >
       <input
         value={query}
@@ -43,7 +44,7 @@ export function SearchBar({ action = ROUTES.stations, defaultValue = "", compact
       />
       <button
         type="submit"
-        className="min-h-12 rounded-lg bg-[linear-gradient(135deg,var(--primary),#00a889)] px-5 text-sm font-semibold text-secondary shadow-[0_12px_26px_rgba(0,194,168,0.22)] transition hover:brightness-105"
+        className="min-h-12 rounded-lg bg-primary px-5 text-sm font-bold text-secondary transition hover:bg-primary-hover"
       >
         Search
       </button>

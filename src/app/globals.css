@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4fbf7;
-  --foreground: #071512;
-  --primary: #0b5b3a;
-  --primary-hover: #0f7048;
+  --background: #f7f7f5;
+  --foreground: #1c1c1c;
+  --primary: #166534;
+  --primary-hover: #14532d;
   --secondary: #ffffff;
   --surface: #ffffff;
-  --surface-strong: #eaf7f1;
-  --border: #d7e7de;
-  --muted: #60736c;
-  --accent: #00c2a8;
-  --accent-soft: #dffcf5;
-  --ink: #06130f;
+  --surface-strong: #efefec;
+  --border: #deded9;
+  --muted: #686868;
+  --accent: #166534;
+  --accent-soft: #efefec;
+  --electric: #166534;
+  --charcoal: #1c1c1c;
+  --ink: #ffffff;
 }
 
 @theme inline {
@@ -27,6 +29,8 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-electric: var(--electric);
+  --color-charcoal: var(--charcoal);
   --color-ink: var(--ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -44,13 +48,12 @@ html {
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    linear-gradient(180deg, var(--background) 0%, #ffffff 48%, #eefaf5 100%);
+  background: var(--background);
   color: var(--foreground);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: #d9ded9;
   color: var(--foreground);
 }
 
@@ -61,33 +64,6 @@ select {
   outline-color: var(--primary);
 }
 
-.energy-grid {
-  position: relative;
-  overflow: hidden;
-}
-
-.energy-grid::before {
-  position: absolute;
-  inset: 0;
-  content: "";
-  pointer-events: none;
-  background-image:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent 82%);
-}
-
-.energy-grid > * {
-  position: relative;
-}
-
-.map-grid {
-  background:
-    linear-gradient(135deg, rgba(0, 194, 168, 0.22), transparent 38%),
-    linear-gradient(315deg, rgba(217, 255, 112, 0.18), transparent 34%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(135deg, #05130f 0%, #0b3a2c 54%, #061c17 100%);
-  background-size: auto, auto, 28px 28px, 28px 28px, auto;
+.ev-map-placeholder {
+  background: var(--surface-strong) url("/ev-hero.png") center top / cover no-repeat;
 }

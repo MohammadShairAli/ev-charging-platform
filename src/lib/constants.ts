@@ -2,7 +2,9 @@ import type { Station } from "@/src/types";
 
 export const ROUTES = {
   home: "/",
+  planTrip: "/plan-trip",
   stations: "/charging-stations",
+  profile: "/profile",
 } as const;
 
 export const COPY = {
@@ -164,6 +166,20 @@ export const SAMPLE_STATIONS: Station[] = [
     website: "https://maps.google.com",
     rating: 4.1,
     operator: "Sample Network",
+    created_at: null,
+    updated_at: null,
+  },
+  {
+    id: "bhera-m2-ev",
+    google_place_id: null,
+    name: "Bhera M-2 EV Charging Station",
+    address: "M-2 Motorway, outside Bhera toll plaza, Punjab, Pakistan",
+    latitude: 32.463068736919496,
+    longitude: 72.88432014721543,
+    phone: "+92 307 6559293",
+    website: "https://openchargemap.org/poi/details/479904",
+    rating: null,
+    operator: "Motorway charging network",
     created_at: null,
     updated_at: null,
   },
