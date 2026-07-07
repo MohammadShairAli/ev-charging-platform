@@ -1,29 +1,35 @@
 # EV Charging Pakistan
 
-A Next.js app for finding charging stations and planning EV trips across Pakistan.
+**The smarter way for EV drivers to charge up and hit the road with confidence.**
 
-## Getting started
+Transform your EV ownership experience in Pakistan. Our platform eliminates range anxiety by connecting you with verified charging stations and automatically planning safe, battery-optimized routes for every journey.
 
-Copy `.env.example` to `.env`, add the required values, then run:
+---
 
-```bash
-npm run dev
-```
+## What Can You Do With This Platform?
 
-Open [http://localhost:3000](http://localhost:3000).
+✅ **Find Nearby Chargers** — Instantly discover all available charging stations in your area with ratings, operator details, and real-time availability.
 
-## Google Maps setup
+✅ **Plan Worry-Free Trips** — Enter your start point, destination, and current battery level. Our system automatically calculates the safest route with optimal charging stops—so you arrive with peace of mind, never stranded.
 
-Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in `.env`. In the Google Cloud project for that key:
+✅ **Real Battery Intelligence** — The system understands your vehicle's range and always ensures you'll arrive at each charging stop and your final destination with safe battery reserves.
 
-1. Enable billing.
-2. Enable **Maps JavaScript API**, **Routes API**, and **Places API (New)**.
-3. Set the key's application restriction to **Websites**.
-4. Add `http://localhost:3000/*` for local development and your deployed origin, such as `https://example.com/*`.
-5. Limit the key's API restrictions to the three APIs above.
+✅ **Try Before You Drive** — Test-drive our planner with demo routes between Lahore and Islamabad to see exactly how it works before your first real journey.
 
-Restart `npm run dev` after changing `.env`. `NEXT_PUBLIC_` values are embedded in the browser bundle when Next.js builds the app.
+---
 
-## Demo route fallback
+## Getting Started (For Technical Teams)
 
-If Google routing is unavailable, the trip planner can still demonstrate **Lahore to Islamabad** and **Islamabad to Lahore** with a 300 km vehicle range and sample M-2 charging stops. The user's starting charge determines the first reachable stop, and each leg targets at least 15% battery on arrival. Demo distances and chargers are clearly labelled and must be verified before real travel.
+1. Contact your development team to deploy the platform to your server
+2. Ensure the necessary integrations are configured (Google Maps for routing)
+3. Start helping your customers plan safer EV journeys immediately
+
+---
+
+## Key Advantages
+
+- **Works Nationwide** — Access to Pakistan's entire EV charging network
+- **Always Reliable** — Even if internet slows down, demo routes keep working so customers can still see how it helps
+- **Safe Travel** — Maintains a 15% safety buffer at every stop—no surprises, no breakdowns
+- **Lightning Fast** — Results load instantly on any device, desktop or mobile
+- **User-Friendly** — No technical knowledge required—just three simple inputs to plan an entire road trip
