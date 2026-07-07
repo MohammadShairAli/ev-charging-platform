@@ -5,9 +5,11 @@ import type { Station } from "@/src/types";
 
 type StationListProps = {
   stations: Station[];
+  showPlaceImage?: boolean;
+  showMapButton?: boolean;
 };
 
-export function StationList({ stations }: StationListProps) {
+export function StationList({ stations, showPlaceImage = false, showMapButton = false }: StationListProps) {
   if (!stations.length) {
     return <EmptyState title="No stations found" message={COPY.noStations} />;
   }
@@ -15,7 +17,12 @@ export function StationList({ stations }: StationListProps) {
   return (
     <div className="grid gap-4 sm:gap-5">
       {stations.map((station) => (
-        <StationCard key={station.id} station={station} />
+        <StationCard
+          key={station.id}
+          station={station}
+          showPlaceImage={showPlaceImage}
+          showMapButton={showMapButton}
+        />
       ))}
     </div>
   );

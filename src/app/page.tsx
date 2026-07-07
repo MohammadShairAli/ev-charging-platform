@@ -81,7 +81,7 @@ export default async function HomePage() {
           </div>
           <ButtonLink href={ROUTES.stations}>View All Stations</ButtonLink>
         </div>
-        <StationList stations={nearbyStations} />
+        <StationList stations={nearbyStations} showPlaceImage showMapButton />
       </section>
     </div>
   );
