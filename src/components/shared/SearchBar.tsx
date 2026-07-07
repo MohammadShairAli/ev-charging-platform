@@ -34,7 +34,7 @@ export function SearchBar({ action = ROUTES.stations, defaultValue = "", compact
   return (
     <form
       onSubmit={onSubmit}
-      className={`grid w-full gap-2 rounded-lg border border-border bg-secondary p-1.5 sm:grid-cols-[1fr_auto] ${compact ? "max-w-2xl" : "max-w-3xl"} ${className}`}
+      className={`hidden lg:grid  w-full gap-2 rounded-lg border border-border bg-secondary p-1.5 sm:grid-cols-[1fr_auto] ${compact ? "max-w-2xl" : "max-w-3xl"} ${className}`}
     >
       <input
         value={query}

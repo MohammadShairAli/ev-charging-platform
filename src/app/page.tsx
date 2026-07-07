@@ -35,7 +35,7 @@ export default async function HomePage() {
             <SearchBar className="shadow-none" />
           </div>
 
-          <div className="mt-3">
+          <div className="mt-3 hidden lg:block">
             <ButtonLink href={ROUTES.stations} className="min-h-14 rounded-xl">
               Find a charger
             </ButtonLink>
@@ -72,8 +72,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <section className=" mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+        <div className="hidden lg:flex mb-6  flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-primary">Ready near you</p>
             <h2 className="mt-2 text-2xl font-semibold text-foreground sm:text-3xl">Nearby charging stations</h2>

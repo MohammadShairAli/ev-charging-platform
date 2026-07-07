@@ -61,9 +61,11 @@ export function StationCard({ station, showPlaceImage = false, showMapButton = f
               target="_blank"
               rel="noreferrer"
               aria-label={`Open ${station.name} in Google Maps`}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
             >
-              <GoogleMapsIcon />
+              <span className="material-symbols-outlined">
+                near_me
+              </span>
             </a>
           ) : null}
         </div>
