@@ -3,6 +3,7 @@ import type { Station } from "@/src/types";
 export const ROUTES = {
   home: "/",
   planTrip: "/plan-trip",
+  costComparison: "/cost-comparison",
   stations: "/charging-stations",
   profile: "/profile",
 } as const;

@@ -7,7 +7,7 @@ import { GoogleMap } from "@/src/components/map/GoogleMap";
 import { ROUTES } from "@/src/lib/constants";
 import type { DirectionsResult, LatLngLiteral, Station } from "@/src/types";
 import { calculateDistanceKm } from "@/src/utils/distance";
-import { stationCoordinates } from "@/src/utils/station";
+import { googleMapsDirectionsUrl, stationCoordinates } from "@/src/utils/station";
 
 type ClosestStationPanelProps = {
   stations: Station[];
@@ -64,6 +64,7 @@ export function ClosestStationPanel({
   const [locationLabel, setLocationLabel] = useState("Estimated from Pakistan center");
   const [directions, setDirections] = useState<DirectionsResult>(defaultDirections);
   const closest = useMemo(() => findClosestStation(stations, origin), [origin, stations]);
+  const directionsUrl = closest ? googleMapsDirectionsUrl(closest.station) : null;
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -174,13 +175,28 @@ export function ClosestStationPanel({
             <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
             {locationLabel}
           </p>
-          <Link
-            href={`${ROUTES.stations}/${closest.station.id}`}
-            className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-secondary transition hover:bg-primary-hover"
-          >
-            View station
-            <span aria-hidden="true">&rarr;</span>
-          </Link>
+          <div className="mt-4 flex gap-2">
+            <Link
+              href={`${ROUTES.stations}/${closest.station.id}`}
+              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-secondary transition hover:bg-primary-hover"
+            >
+              View station
+              <span aria-hidden="true">&rarr;</span>
+            </Link>
+            {directionsUrl ? (
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open ${closest.station.name} in Google Maps`}
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
+              >
+                <span className="material-symbols-outlined">
+                  near_me
+                </span>
+              </a>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
