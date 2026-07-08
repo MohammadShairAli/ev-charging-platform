@@ -14,6 +14,9 @@ export function Footer() {
           <Link href={ROUTES.stations} className="rounded-full px-3 py-1.5 text-secondary/75 transition hover:bg-secondary/10 hover:text-secondary">
             Stations
           </Link>
+          <Link href={ROUTES.costComparison} className="rounded-full px-3 py-1.5 text-secondary/75 transition hover:bg-secondary/10 hover:text-secondary">
+            Compare costs
+          </Link>
         </div>
       </div>
     </footer>

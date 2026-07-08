@@ -36,6 +36,9 @@ export function Navbar() {
           <Link href={ROUTES.stations} className="rounded-full px-2.5 py-2 transition hover:bg-secondary hover:text-primary sm:px-3">
             Stations
           </Link>
+          <Link href={ROUTES.costComparison} className="rounded-full px-2.5 py-2 transition hover:bg-secondary hover:text-primary sm:px-3">
+            Compare
+          </Link>
           <Link href={ROUTES.profile} className="rounded-full px-2.5 py-2 transition hover:bg-secondary hover:text-primary sm:px-3">
             Profile
           </Link>

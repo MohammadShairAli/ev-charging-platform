@@ -73,15 +73,3 @@ export function StationCard({ station, showPlaceImage = false, showMapButton = f
     </article>
   );
 }
-
-function GoogleMapsIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="#34a853" d="M12 22s7-6.1 7-13A7 7 0 0 0 5 9c0 6.9 7 13 7 13Z" />
-      <path fill="#4285f4" d="M12 12.5A3.5 3.5 0 0 0 15.5 9H19c0 6.9-7 13-7 13v-9.5Z" opacity="0.9" />
-      <path fill="#fbbc04" d="M5 9a7 7 0 0 1 7-7v7H5Z" />
-      <path fill="#ea4335" d="M12 2a7 7 0 0 1 7 7h-7V2Z" />
-      <circle cx="12" cy="9" r="2.4" fill="#fff" />
-    </svg>
-  );
-}
