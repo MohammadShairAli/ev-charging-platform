@@ -8,8 +8,8 @@ export const appConfig = {
     secondary: process.env.NEXT_PUBLIC_SECONDARY_COLOR || "#FFFFFF",
   },
   google: {
-    mapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    browserMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    mapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+    browserMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
     placesApiUrl: "https://maps.googleapis.com/maps/api/place",
     directionsApiUrl: "https://maps.googleapis.com/maps/api/directions/json",
     pakistanCenter: {
