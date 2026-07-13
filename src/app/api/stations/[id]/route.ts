@@ -1,6 +1,8 @@
 import { COPY } from "@/src/lib/constants";
 import { stationsService } from "@/src/services/stations.service";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;

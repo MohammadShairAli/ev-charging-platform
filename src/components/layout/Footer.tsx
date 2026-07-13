@@ -9,13 +9,16 @@ export function Footer() {
         <p className="text-secondary/75">&copy; {new Date().getFullYear()} {appConfig.name}</p>
         <div className="flex flex-wrap gap-3">
           <Link href={ROUTES.home} className="rounded-full px-3 py-1.5 text-secondary/75 transition hover:bg-secondary/10 hover:text-secondary">
-            Home
+            Emergency
           </Link>
           <Link href={ROUTES.stations} className="rounded-full px-3 py-1.5 text-secondary/75 transition hover:bg-secondary/10 hover:text-secondary">
             Stations
           </Link>
           <Link href={ROUTES.costComparison} className="rounded-full px-3 py-1.5 text-secondary/75 transition hover:bg-secondary/10 hover:text-secondary">
             Compare costs
+          </Link>
+          <Link href={ROUTES.evDatabase} className="rounded-full px-3 py-1.5 text-secondary/75 transition hover:bg-secondary/10 hover:text-secondary">
+            EV database
           </Link>
         </div>
       </div>

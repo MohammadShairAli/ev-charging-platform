@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { CSSProperties, ReactNode } from "react";
-import { Footer } from "@/src/components/layout/Footer";
-import { MobileBottomNav } from "@/src/components/layout/MobileBottomNav";
-import { Navbar } from "@/src/components/layout/Navbar";
+import { AppChrome } from "@/src/components/layout/AppChrome";
 import { appConfig } from "@/src/lib/config";
 import "./globals.css";
 
@@ -41,10 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         />
       </head>
       <body className="flex min-h-screen flex-col overflow-x-hidden pb-24 sm:pb-0">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <MobileBottomNav />
-        <Footer />
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

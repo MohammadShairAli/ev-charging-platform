@@ -2,6 +2,8 @@ import { COPY } from "@/src/lib/constants";
 import { stationsService } from "@/src/services/stations.service";
 import type { StationSort } from "@/src/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);

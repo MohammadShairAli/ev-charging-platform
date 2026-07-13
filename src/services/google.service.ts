@@ -1,5 +1,6 @@
 import { appConfig } from "@/src/lib/config";
 import type { DirectionsRequest, DirectionsResult, Station } from "@/src/types";
+import { isLikelyChargingStation } from "@/src/utils/station-quality";
 
 type GooglePlace = {
   place_id?: string;
@@ -14,6 +15,7 @@ type GooglePlace = {
   rating?: number;
   formatted_phone_number?: string;
   website?: string;
+  types?: string[];
 };
 
 type PlacesResponse = {
@@ -71,14 +73,38 @@ export class GoogleService {
     url.searchParams.set("query", `${query || "Pakistan"} EV charging station`);
     url.searchParams.set("key", key);
 
-    const response = await fetch(url, { next: { revalidate: 3600 } });
+    const response = await fetch(url, { cache: "no-store" });
     const data = (await response.json()) as PlacesResponse;
 
     if (!response.ok || data.status === "REQUEST_DENIED") {
       throw new Error("Google Places API unavailable.");
     }
 
-    return (data.results || []).map(normalizePlace).filter((station): station is Station => Boolean(station));
+    return (data.results || [])
+      .filter((place) => place.types?.includes("electric_vehicle_charging_station") || isLikelyGoogleChargingPlace(place))
+      .map(normalizePlace)
+      .filter((station): station is Station => Boolean(station));
+  }
+
+  async findEvStationByPlaceId(placeId: string) {
+    const key = requireGoogleKey();
+    const url = new URL(`${appConfig.google.placesApiUrl}/details/json`);
+    url.searchParams.set("place_id", placeId.replace(/^google-/, ""));
+    url.searchParams.set("fields", "place_id,name,formatted_address,geometry,rating,formatted_phone_number,website,types");
+    url.searchParams.set("key", key);
+
+    const response = await fetch(url, { cache: "no-store" });
+    const data = (await response.json()) as PlacesResponse & { result?: GooglePlace; error_message?: string };
+
+    if (!response.ok || data.status === "REQUEST_DENIED") {
+      throw new Error(data.error_message || "Google Places API unavailable.");
+    }
+
+    if (!data.result || !isLikelyGoogleChargingPlace(data.result)) {
+      return null;
+    }
+
+    return normalizePlace(data.result);
   }
 
   async getDirections(input: DirectionsRequest): Promise<DirectionsResult> {
@@ -89,7 +115,7 @@ export class GoogleService {
     url.searchParams.set("mode", "driving");
     url.searchParams.set("key", key);
 
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: "no-store" });
     const data = (await response.json()) as DirectionsResponse;
     const leg = data.routes?.[0]?.legs?.[0];
 
@@ -106,3 +132,11 @@ export class GoogleService {
 }
 
 export const googleService = new GoogleService();
+
+function isLikelyGoogleChargingPlace(place: GooglePlace) {
+  return isLikelyChargingStation({
+    name: place.name || "",
+    address: place.formatted_address || null,
+    operator: null,
+  });
+}

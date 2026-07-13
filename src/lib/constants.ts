@@ -4,9 +4,43 @@ export const ROUTES = {
   home: "/",
   planTrip: "/plan-trip",
   costComparison: "/cost-comparison",
+  evDatabase: "/ev-database",
   stations: "/charging-stations",
   profile: "/profile",
+  login: "/login",
+  signup: "/signup",
+  forgotPassword: "/forgot-password",
+  authCallback: "/auth/callback",
+  authVerify: "/auth/verify",
+  authResetPassword: "/auth/reset-password",
 } as const;
+
+export const AUTH_STORAGE_KEY = "ev-auth-session";
+export const AUTH_COOKIE_NAME = "ev_session_mode";
+export const LEGACY_AUTH_COOKIE_NAME = "ev_auth_mode";
+
+export const EMERGENCY_CONTACTS = [
+  {
+    label: "Rescue 1122",
+    number: "1122",
+    description: "Ambulance, rescue, and fire emergency response.",
+  },
+  {
+    label: "Motorway Police",
+    number: "130",
+    description: "Roadside help and towing support on national highways and motorways.",
+  },
+  {
+    label: "Police Emergency",
+    number: "15",
+    description: "Immediate police assistance in Pakistan.",
+  },
+  {
+    label: "Edhi Ambulance",
+    number: "115",
+    description: "Private ambulance support where available.",
+  },
+] as const;
 
 export const COPY = {
   unavailableMap: "Add a Google Maps API key to view the interactive map.",

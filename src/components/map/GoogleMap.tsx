@@ -52,6 +52,8 @@ type GoogleMapsNamespace = {
 type GoogleMapInstance = {
   setCenter: (center: LatLngLiteral) => void;
   fitBounds: (bounds: GoogleLatLngBounds) => void;
+  getZoom: () => number | undefined;
+  setZoom: (zoom: number) => void;
 };
 
 type GoogleMarker = {
@@ -65,6 +67,8 @@ type GoogleInfoWindow = {
 type GoogleLatLngBounds = {
   extend: (point: LatLngLiteral) => void;
 };
+
+const DIRECTORY_MAX_ZOOM = 13;
 
 declare global {
   interface Window {
@@ -87,7 +91,7 @@ function loadGoogleMaps() {
   loadingPromise = new Promise((resolve, reject) => {
     window.initEvMap = () => resolve();
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${appConfig.google.mapsApiKey}&callback=initEvMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${appConfig.google.browserMapsApiKey}&callback=initEvMap`;
     script.async = true;
     script.onerror = () => reject(new Error("Google Maps script failed to load."));
     document.head.appendChild(script);
@@ -156,10 +160,10 @@ export function GoogleMap({
   onRouteResolved,
 }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(appConfig.google.mapsApiKey ? null : COPY.unavailableMap);
+  const [error, setError] = useState<string | null>(appConfig.google.browserMapsApiKey ? null : COPY.unavailableMap);
 
   useEffect(() => {
-    if (!mapRef.current || !appConfig.google.mapsApiKey) {
+    if (!mapRef.current || !appConfig.google.browserMapsApiKey) {
       return;
     }
 
@@ -240,12 +244,18 @@ export function GoogleMap({
           map.fitBounds(bounds);
         }
 
+        const stationBounds = new window.google.maps.LatLngBounds();
+        let stationMarkerCount = 0;
+
         stations.forEach((station) => {
           const coordinates = stationCoordinates(station);
 
           if (!coordinates || !window.google?.maps) {
             return;
           }
+
+          stationBounds.extend(coordinates);
+          stationMarkerCount += 1;
 
           const marker = new window.google.maps.Marker({
             position: coordinates,
@@ -262,6 +272,24 @@ export function GoogleMap({
             map.setCenter(coordinates);
           });
         });
+
+        if (!routePath.length && !selectedCoordinates && stationMarkerCount > 0) {
+          if (stationMarkerCount === 1) {
+            const onlyStation = stations.map(stationCoordinates).find(Boolean);
+            if (onlyStation) {
+              map.setCenter(onlyStation);
+              map.setZoom(appConfig.google.stationZoom);
+            }
+          } else {
+            map.fitBounds(stationBounds);
+            window.setTimeout(() => {
+              const currentZoom = map.getZoom();
+              if (currentZoom && currentZoom > DIRECTORY_MAX_ZOOM) {
+                map.setZoom(DIRECTORY_MAX_ZOOM);
+              }
+            }, 0);
+          }
+        }
       })
       .catch(() => setError(COPY.unavailableMap));
 

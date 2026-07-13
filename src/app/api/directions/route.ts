@@ -2,6 +2,8 @@ import { COPY } from "@/src/lib/constants";
 import { directionsService } from "@/src/services/directions.service";
 import type { DirectionsRequest } from "@/src/types";
 
+export const dynamic = "force-dynamic";
+
 function isCoordinate(value: unknown): value is { lat: number; lng: number } {
   return (
     typeof value === "object" &&

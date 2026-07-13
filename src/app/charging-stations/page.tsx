@@ -2,14 +2,19 @@ import Link from "next/link";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
 import { StationsToolbar } from "@/src/components/station/StationsToolbar";
 import { StationList } from "@/src/components/station/StationList";
+import { requireSessionAccess } from "@/src/lib/auth-guard";
 import { stationsService } from "@/src/services/stations.service";
-import type { StationSort } from "@/src/types";
+import type { LatLngLiteral, StationSort } from "@/src/types";
+
+export const dynamic = "force-dynamic";
 
 type ChargingStationsPageProps = {
   searchParams: Promise<{
     q?: string;
     sort?: StationSort;
     page?: string;
+    lat?: string;
+    lng?: string;
   }>;
 };
 
@@ -17,10 +22,12 @@ const validSorts: StationSort[] = ["name", "rating", "distance"];
 const pageSize = 6;
 
 export default async function ChargingStationsPage({ searchParams }: ChargingStationsPageProps) {
+  await requireSessionAccess();
   const params = await searchParams;
-  const sort = validSorts.includes(params.sort || "name") ? params.sort || "name" : "name";
+  const sort = validSorts.includes(params.sort || "distance") ? params.sort || "distance" : "distance";
   const query = params.q || "";
-  const stations = await stationsService.list({ q: query, sort });
+  const origin = parseOrigin(params.lat, params.lng);
+  const stations = await stationsService.list({ q: query, sort, origin });
   const requestedPage = Math.floor(Number(params.page || "1"));
   const totalPages = Math.max(1, Math.ceil(stations.length / pageSize));
   const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
@@ -49,12 +56,13 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
           <div className="my-3 rounded-full bg-surface-strong px-4 py-2 text-sm font-medium text-muted">
             {stations.length} station{stations.length === 1 ? "" : "s"} found
           </div>
-          <StationList stations={paginatedStations} showMapButton />
+          <StationList stations={paginatedStations} showPlaceImage showMapButton />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             query={query}
             sort={sort}
+            origin={origin}
             className="mt-4"
           />
         </div>
@@ -74,8 +82,8 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
             <div className="rounded-full bg-surface-strong px-4 py-2 text-sm font-medium text-muted">
               {stations.length} station{stations.length === 1 ? "" : "s"} found
             </div>
-            <StationList stations={paginatedStations} showMapButton />
-            <Pagination currentPage={currentPage} totalPages={totalPages} query={query} sort={sort} />
+            <StationList stations={paginatedStations} showPlaceImage showMapButton />
+            <Pagination currentPage={currentPage} totalPages={totalPages} query={query} sort={sort} origin={origin} />
           </div>
           <div className="order-1 lg:sticky lg:top-24 lg:order-2 lg:self-start">
             <div className="rounded-lg border border-border bg-surface p-2 sm:p-3">
@@ -88,17 +96,37 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
   );
 }
 
+function parseOrigin(lat?: string, lng?: string): LatLngLiteral | undefined {
+  const parsedLat = Number(lat);
+  const parsedLng = Number(lng);
+
+  if (
+    Number.isFinite(parsedLat) &&
+    Number.isFinite(parsedLng) &&
+    parsedLat >= -90 &&
+    parsedLat <= 90 &&
+    parsedLng >= -180 &&
+    parsedLng <= 180
+  ) {
+    return { lat: parsedLat, lng: parsedLng };
+  }
+
+  return undefined;
+}
+
 function Pagination({
   currentPage,
   totalPages,
   query,
   sort,
+  origin,
   className = "",
 }: {
   currentPage: number;
   totalPages: number;
   query: string;
   sort: StationSort;
+  origin?: LatLngLiteral;
   className?: string;
 }) {
   if (totalPages <= 1) {
@@ -111,7 +139,7 @@ function Pagination({
         Page {currentPage} of {totalPages}
       </div>
       <div className="flex items-center justify-between gap-2">
-      <PaginationLink page={currentPage - 1} disabled={currentPage === 1} query={query} sort={sort}>
+      <PaginationLink page={currentPage - 1} disabled={currentPage === 1} query={query} sort={sort} origin={origin}>
         Previous
       </PaginationLink>
       <div className="flex min-w-0 items-center justify-center gap-1">
@@ -123,12 +151,13 @@ function Pagination({
             compact
             query={query}
             sort={sort}
+            origin={origin}
           >
             {page}
           </PaginationLink>
         ))}
       </div>
-      <PaginationLink page={currentPage + 1} disabled={currentPage === totalPages} query={query} sort={sort}>
+      <PaginationLink page={currentPage + 1} disabled={currentPage === totalPages} query={query} sort={sort} origin={origin}>
         Next
       </PaginationLink>
       </div>
@@ -147,6 +176,7 @@ function PaginationLink({
   page,
   query,
   sort,
+  origin,
   children,
   active,
   compact,
@@ -155,6 +185,7 @@ function PaginationLink({
   page: number;
   query: string;
   sort: StationSort;
+  origin?: LatLngLiteral;
   children: React.ReactNode;
   active?: boolean;
   compact?: boolean;
@@ -176,8 +207,12 @@ function PaginationLink({
   if (query) {
     params.set("q", query);
   }
-  if (sort !== "name") {
+  if (sort !== "distance") {
     params.set("sort", sort);
+  }
+  if (origin) {
+    params.set("lat", String(origin.lat));
+    params.set("lng", String(origin.lng));
   }
   if (page > 1) {
     params.set("page", String(page));

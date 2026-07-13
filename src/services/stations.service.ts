@@ -1,7 +1,8 @@
-import { SAMPLE_STATIONS } from "@/src/lib/constants";
 import { supabase } from "@/src/lib/supabase";
+import { googleService } from "@/src/services/google.service";
 import type { Station, StationFilters } from "@/src/types";
 import { calculateDistanceKm } from "@/src/utils/distance";
+import { isLikelyChargingStation } from "@/src/utils/station-quality";
 
 function normalizeStation(row: Station): Station {
   return {
@@ -15,7 +16,7 @@ function normalizeStation(row: Station): Station {
 function applyFilters(stations: Station[], filters: StationFilters = {}) {
   const query = filters.q?.trim().toLowerCase();
 
-  let results = stations.map((station) => {
+  let results = stations.filter(isLikelyChargingStation).map((station) => {
     if (!filters.origin || station.latitude === null || station.longitude === null) {
       return station;
     }
@@ -45,7 +46,8 @@ function applyFilters(stations: Station[], filters: StationFilters = {}) {
     }
 
     if (sort === "distance") {
-      return (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY);
+      const distanceDelta = (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY);
+      return Number.isFinite(distanceDelta) ? distanceDelta : a.name.localeCompare(b.name);
     }
 
     return a.name.localeCompare(b.name);
@@ -54,11 +56,6 @@ function applyFilters(stations: Station[], filters: StationFilters = {}) {
 
 export class StationsService {
   async list(filters: StationFilters = {}) {
-    // if (!supabase.isConfigured) {
-    if (true) {
-      return applyFilters(SAMPLE_STATIONS, filters);
-    }
-
     const params: Record<string, string> = {
       select: "*",
       order: "name.asc",
@@ -66,40 +63,50 @@ export class StationsService {
 
     if (filters.q?.trim()) {
       const query = filters.q?.trim().replaceAll(",", " ");
-      params.or = `name.ilike.*${query}*,address.ilike.*${query}*,operator.ilike.*${query}*`;
+      params.or = `(name.ilike.*${query}*,address.ilike.*${query}*,operator.ilike.*${query}*)`;
     }
 
-    // const rows = await supabase.get<Station[]>("stations", params);
-    // return applyFilters(rows.map(normalizeStation), filters);
-    let rows: Station[] = [];
+    if (supabase.isConfigured) {
+      try {
+        const rows = await supabase.get<Station[]>("stations", params);
 
-try {
-  rows = await supabase.get<Station[]>("stations", params);
-} catch (e) {
-  console.error("Supabase failed:", e);
-  rows = [];
-}
+        if (rows.length) {
+          return applyFilters(rows.map(normalizeStation), filters);
+        }
+      } catch {
+        // Google remains a live source when the database API is unavailable.
+      }
+    }
 
-return applyFilters(rows.map(normalizeStation), filters);
+    const googleStations = await googleService.searchEvStations(filters.q || "Pakistan");
+    return applyFilters(googleStations, filters);
   }
 
   async findById(id: string) {
+    if (supabase.isConfigured) {
+      try {
+        const rows = await supabase.get<Station[]>("stations", {
+          select: "*",
+          or: `(id.eq.${id},google_place_id.eq.${id.replace(/^google-/, "")})`,
+          limit: 1,
+        });
 
-    // if (!supabase.isConfigured) {
-    if (true) {
-      return SAMPLE_STATIONS.find((station) => station.id === id) || null;
+        if (rows[0]) {
+          return normalizeStation(rows[0]);
+        }
+      } catch {
+        // Google remains a live source when the database API is unavailable.
+      }
     }
 
-    const rows = await supabase.get<Station[]>("stations", {
-      select: "*",
-      id: `eq.${id}`,
-      limit: 1,
-    });
-
-    return rows[0] ? normalizeStation(rows[0]) : null;
+    return googleService.findEvStationByPlaceId(id);
   }
 
   async saveFromGoogle(stations: Station[]) {
+    if (!supabase.isConfigured || !stations.length) {
+      return [];
+    }
+
     return supabase.upsert("stations", stations, "google_place_id");
   }
 }

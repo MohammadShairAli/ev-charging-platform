@@ -10,6 +10,8 @@ type GooglePlaceDetailsResponse = {
 
 const fallbackImagePath = "/ev-hero.png";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const placeId = url.searchParams.get("placeId");

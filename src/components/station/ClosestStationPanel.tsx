@@ -6,8 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
 import { ROUTES } from "@/src/lib/constants";
 import type { DirectionsResult, LatLngLiteral, Station } from "@/src/types";
-import { calculateDistanceKm } from "@/src/utils/distance";
+import { calculateDistanceKm, formatDistance } from "@/src/utils/distance";
 import { googleMapsDirectionsUrl, stationCoordinates } from "@/src/utils/station";
+import { isLikelyChargingStation } from "@/src/utils/station-quality";
 
 type ClosestStationPanelProps = {
   stations: Station[];
@@ -32,6 +33,10 @@ const defaultDirections: DirectionsResult = {
 
 function findClosestStation(stations: Station[], origin: LatLngLiteral): ClosestStation | null {
   return stations.reduce<ClosestStation | null>((closest, station) => {
+    if (!isLikelyChargingStation(station)) {
+      return closest;
+    }
+
     const coordinates = stationCoordinates(station);
 
     if (!coordinates) {
@@ -65,6 +70,9 @@ export function ClosestStationPanel({
   const [directions, setDirections] = useState<DirectionsResult>(defaultDirections);
   const closest = useMemo(() => findClosestStation(stations, origin), [origin, stations]);
   const directionsUrl = closest ? googleMapsDirectionsUrl(closest.station) : null;
+  const closestImageUrl = closest?.station.google_place_id
+    ? `/api/place-photo?placeId=${encodeURIComponent(closest.station.google_place_id)}`
+    : "/icon.png";
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -156,8 +164,15 @@ export function ClosestStationPanel({
       {showDetails && closest ? (
         <div className="rounded-2xl border border-border bg-secondary p-4 sm:p-5">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-surface-strong">
-              <Image src="/icon.png" alt="" width={30} height={30} className="object-contain" />
+            <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface-strong">
+              <Image
+                src={closestImageUrl}
+                alt=""
+                fill
+                unoptimized
+                sizes="44px"
+                className={closest.station.google_place_id ? "object-cover" : "object-contain p-2"}
+              />
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">Closest EV station</p>
@@ -168,7 +183,7 @@ export function ClosestStationPanel({
             {closest.station.address || "Address unavailable"}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <ClosestMetric label="Distance" value={directions.distanceText} />
+            <ClosestMetric label="Distance" value={formatDistance(closest.directDistanceKm)} />
             <ClosestMetric label="Time" value={directions.durationText} />
           </div>
           <p className="mt-3 flex items-center gap-2 text-xs text-muted">

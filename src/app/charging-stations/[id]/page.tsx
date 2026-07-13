@@ -2,14 +2,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
+import { requireSessionAccess } from "@/src/lib/auth-guard";
 import { stationsService } from "@/src/services/stations.service";
 import { googleMapsDirectionsUrl, stationCoordinates } from "@/src/utils/station";
+
+export const dynamic = "force-dynamic";
 
 type StationDetailsPageProps = {
   params: Promise<{ id: string }>;
 };
 
 export default async function StationDetailsPage({ params }: StationDetailsPageProps) {
+  await requireSessionAccess();
   const { id } = await params;
   const station = await stationsService.findById(id);
 
@@ -41,9 +45,11 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
         </div>
 
         <div className="relative z-10 -mt-8 rounded-t-[1.6rem] border border-border bg-secondary px-4 pb-5 pt-4">
-          <div className="mb-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-primary">
-            {station.operator || "Operator unavailable"}
-          </div>
+          {station.operator ? (
+            <div className="mb-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-primary">
+              {station.operator}
+            </div>
+          ) : null}
           <h1 className="text-2xl font-bold leading-tight text-foreground">{station.name}</h1>
           <p className="mt-2 text-sm leading-6 text-muted">{station.address || "Address unavailable"}</p>
 
@@ -54,7 +60,16 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
               label="Coordinates"
               value={coordinates ? `${coordinates.lat.toFixed(3)}, ${coordinates.lng.toFixed(3)}` : "Unavailable"}
             />
-            <MobileDetailTile label="Website" value={station.website ? "Available" : "Unavailable"} />
+            {station.website ? (
+              <MobileDetailTile
+                label="Website"
+                value={
+                  <a href={station.website} target="_blank" rel="noreferrer" className="text-primary">
+                    {readableUrl(station.website)}
+                  </a>
+                }
+              />
+            ) : null}
           </dl>
 
           <div className="mt-5 grid gap-3">
@@ -67,9 +82,11 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
       <section className="mx-auto hidden max-w-7xl px-4 py-6 sm:block sm:px-6 sm:py-10 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[0.86fr_1.14fr] lg:items-start">
           <div className="rounded-lg border border-border bg-surface p-5 sm:p-6">
-            <div className="inline-flex rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-primary">
-              {station.operator || "Operator unavailable"}
-            </div>
+            {station.operator ? (
+              <div className="inline-flex rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-primary">
+                {station.operator}
+              </div>
+            ) : null}
             <h1 className="mt-3 text-3xl font-bold leading-tight tracking-normal text-foreground sm:text-4xl">
               {station.name}
             </h1>
@@ -83,7 +100,7 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
                 value={
                   station.website ? (
                     <a href={station.website} target="_blank" rel="noreferrer" className="font-medium text-primary">
-                      Visit website
+                      {readableUrl(station.website)}
                     </a>
                   ) : (
                     "Unavailable"
@@ -113,6 +130,10 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
       </section>
     </>
   );
+}
+
+function readableUrl(url: string) {
+  return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {

@@ -146,7 +146,7 @@ type PlannedStop = {
 };
 
 type TripPlan = {
-  source: "google" | "demo";
+  source: "google";
   origin: LatLngLiteral;
   destination: LatLngLiteral;
   routePath: LatLngLiteral[];
@@ -165,67 +165,8 @@ type TripPlannerProps = {
 
 const MAX_CHARGING_STOPS = 8;
 const ARRIVAL_RESERVE_PERCENT = 15;
-const DEMO_CAR_RANGE_KM = 300;
 const TRIP_RESULT_QUERY_KEY = "result";
 const TRIP_RESULT_QUERY_VALUE = "1";
-const LAHORE_COORDINATES = { lat: 31.5204, lng: 74.3587 } satisfies LatLngLiteral;
-const ISLAMABAD_COORDINATES = { lat: 33.6844, lng: 73.0479 } satisfies LatLngLiteral;
-const DEMO_ROUTE_PATH: LatLngLiteral[] = [
-  LAHORE_COORDINATES,
-  { lat: 31.633, lng: 74.217 },
-  { lat: 31.737, lng: 73.95 },
-  { lat: 31.898, lng: 73.274 },
-  { lat: 32.2, lng: 73.08 },
-  { lat: 32.482, lng: 72.908 },
-  { lat: 32.779, lng: 72.697 },
-  { lat: 33.145, lng: 72.72 },
-  { lat: 33.43, lng: 72.86 },
-  ISLAMABAD_COORDINATES,
-];
-const DEMO_STATIONS: Station[] = [
-  {
-    id: "demo-pindi-bhattian-m2",
-    google_place_id: null,
-    name: "Pindi Bhattian M-2 Demo Charger",
-    address: "Pindi Bhattian Service Area, M-2 Motorway",
-    latitude: 31.898,
-    longitude: 73.274,
-    phone: null,
-    website: null,
-    rating: null,
-    operator: "Demo charging stop",
-    created_at: null,
-    updated_at: null,
-  },
-  {
-    id: "demo-bhera-m2",
-    google_place_id: null,
-    name: "Bhera M-2 Demo Charger",
-    address: "Bhera Service Area, M-2 Motorway",
-    latitude: 32.482,
-    longitude: 72.908,
-    phone: null,
-    website: null,
-    rating: null,
-    operator: "Demo charging stop",
-    created_at: null,
-    updated_at: null,
-  },
-  {
-    id: "demo-kallar-kahar-m2",
-    google_place_id: null,
-    name: "Kallar Kahar M-2 Demo Charger",
-    address: "Kallar Kahar Service Area, M-2 Motorway",
-    latitude: 32.779,
-    longitude: 72.697,
-    phone: null,
-    website: null,
-    rating: null,
-    operator: "Demo charging stop",
-    created_at: null,
-    updated_at: null,
-  },
-];
 let mapsLoadingPromise: Promise<TripGoogleMaps> | null = null;
 
 function loadGoogleMaps() {
@@ -267,7 +208,7 @@ function loadGoogleMaps() {
 
     tripWindow.initTripPlannerMaps = finish;
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${appConfig.google.mapsApiKey}&callback=initTripPlannerMaps&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${appConfig.google.browserMapsApiKey}&callback=initTripPlannerMaps&loading=async`;
     script.async = true;
     script.onerror = () => reject(new Error("Google Maps failed to load."));
     document.head.appendChild(script);
@@ -658,91 +599,6 @@ function plannedArrivalPercent(
   return Math.max(0, Math.round(departurePercent - usedPercent));
 }
 
-function demoLeg(
-  start: LatLngLiteral,
-  destination: LatLngLiteral,
-  distanceKm: number,
-  durationMinutes: number,
-): GoogleDirectionsLeg {
-  return {
-    distance: { text: `${distanceKm} km`, value: distanceKm * 1000 },
-    duration: { text: formatDuration(durationMinutes * 60), value: durationMinutes * 60 },
-    start_location: routePoint(start),
-    end_location: routePoint(destination),
-  };
-}
-
-function demoRouteDirection(start: string, end: string) {
-  const normalizedStart = start.trim().toLowerCase();
-  const normalizedEnd = end.trim().toLowerCase();
-
-  if (normalizedStart.includes("lahore") && normalizedEnd.includes("islamabad")) {
-    return "lahore-islamabad" as const;
-  }
-
-  if (normalizedStart.includes("islamabad") && normalizedEnd.includes("lahore")) {
-    return "islamabad-lahore" as const;
-  }
-
-  return null;
-}
-
-function buildDemoTripPlan(
-  start: string,
-  end: string,
-  carRangeKm: number,
-  currentChargePercent: number,
-): TripPlan | null {
-  const direction = demoRouteDirection(start, end);
-
-  if (!direction) {
-    return null;
-  }
-
-  const forward = direction === "lahore-islamabad";
-  const stations = forward ? DEMO_STATIONS : [...DEMO_STATIONS].reverse();
-  const stationProgressKm = forward ? [145, 230, 310] : [65, 145, 230];
-  const candidates = stations.map((station, index) => ({
-    station,
-    coordinates: stationCoordinates(station)!,
-    progressKm: stationProgressKm[index],
-    corridorKm: 0,
-  }));
-  const selectedStops = chooseChargingStops(
-    candidates,
-    375,
-    carRangeKm,
-    currentChargePercent,
-  );
-  const origin = forward ? LAHORE_COORDINATES : ISLAMABAD_COORDINATES;
-  const destination = forward ? ISLAMABAD_COORDINATES : LAHORE_COORDINATES;
-  const points = [origin, ...selectedStops.map((stop) => stop.coordinates), destination];
-  const progressPoints = [0, ...selectedStops.map((stop) => stop.progressKm), 375];
-  const distancesKm = progressPoints.slice(1).map((progress, index) => progress - progressPoints[index]);
-  const durationsMinutes = distancesKm.map((distanceKm) => Math.round((distanceKm / 82) * 60));
-  const legs = distancesKm.map((distanceKm, index) => (
-    demoLeg(points[index], points[index + 1], distanceKm, durationsMinutes[index])
-  ));
-
-  return {
-    source: "demo",
-    origin,
-    destination,
-    routePath: forward ? DEMO_ROUTE_PATH : [...DEMO_ROUTE_PATH].reverse(),
-    stops: selectedStops.map((stop, index) => ({
-      station: stop.station,
-      coordinates: stop.coordinates,
-      arrivalLeg: legs[index],
-    })),
-    finalLeg: legs.at(-1)!,
-    totalDistanceKm: distancesKm.reduce((total, distance) => total + distance, 0),
-    totalDurationSeconds: durationsMinutes.reduce((total, duration) => total + duration, 0) * 60,
-    reserveRangeKm: carRangeKm * (ARRIVAL_RESERVE_PERCENT / 100),
-    carRangeKm,
-    currentChargePercent,
-  };
-}
-
 function googleMapsTripUrl(plan: TripPlan) {
   const coordinate = (point: LatLngLiteral) => `${point.lat},${point.lng}`;
   const url = new URL("https://www.google.com/maps/dir/");
@@ -809,6 +665,7 @@ function LocationAutocompleteInput({
   const requestIdRef = useRef(0);
   const sessionTokenRef = useRef<unknown>(null);
   const skipNextSearchRef = useRef(false);
+  const userEditedRef = useRef(false);
 
   useEffect(() => {
     if (skipNextSearchRef.current) {
@@ -816,9 +673,13 @@ function LocationAutocompleteInput({
       return;
     }
 
+    if (!userEditedRef.current) {
+      return;
+    }
+
     const query = value.trim();
 
-    if (query.length < 2 || !appConfig.google.mapsApiKey) {
+    if (query.length < 2 || !appConfig.google.browserMapsApiKey) {
       return;
     }
 
@@ -874,9 +735,11 @@ function LocationAutocompleteInput({
       const selectedValue = place.formattedAddress || place.displayName || predictionText;
 
       skipNextSearchRef.current = true;
+      userEditedRef.current = false;
       onPlaceSelect(selectedValue, toLiteral(place.location));
     } catch {
       skipNextSearchRef.current = true;
+      userEditedRef.current = false;
       onPlaceSelect(predictionText, null);
     }
 
@@ -917,6 +780,7 @@ function LocationAutocompleteInput({
         value={value}
         onChange={(event) => {
           const nextValue = event.target.value;
+          userEditedRef.current = true;
 
           if (nextValue.trim().length < 2) {
             requestIdRef.current += 1;
@@ -927,7 +791,7 @@ function LocationAutocompleteInput({
 
           onValueChange(nextValue);
         }}
-        onFocus={() => setIsOpen(Boolean(suggestions.length || suggestionError))}
+        onFocus={() => setIsOpen(Boolean(userEditedRef.current && (suggestions.length || suggestionError)))}
         onBlur={() => window.setTimeout(() => setIsOpen(false), 150)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
@@ -1081,7 +945,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
       localStorage.setItem(TRIP_DRAFT_STORAGE_KEY, JSON.stringify(draft));
       setUsingSavedRange(true);
 
-      if (!appConfig.google.mapsApiKey) {
+      if (!appConfig.google.browserMapsApiKey) {
         throw new Error("Add a Google Maps API key before planning a live trip.");
       }
 
@@ -1170,18 +1034,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
         currentChargePercent: parsedCurrentCharge,
       });
     } catch (caughtError) {
-      try {
-        const demoPlan = buildDemoTripPlan(start, end, parsedRange, parsedCurrentCharge);
-
-        if (demoPlan) {
-          openResultsView(demoPlan);
-          setError(null);
-        } else {
-          setError(googleApiErrorMessage(caughtError));
-        }
-      } catch (demoError) {
-        setError(demoError instanceof Error ? demoError.message : googleApiErrorMessage(caughtError));
-      }
+      setError(googleApiErrorMessage(caughtError));
     } finally {
       setLoading(false);
     }
@@ -1193,17 +1046,6 @@ export function TripPlanner({ stations }: TripPlannerProps) {
     setStartLocation(endLocation);
     setEndLocation(startLocation);
     setPlan(null);
-  }
-
-  function loadDemoDirection(origin: "Lahore" | "Islamabad", destination: "Lahore" | "Islamabad") {
-    setStart(origin);
-    setEnd(destination);
-    setStartLocation(null);
-    setEndLocation(null);
-    setRangeKm(String(DEMO_CAR_RANGE_KM));
-    setUsingSavedRange(false);
-    setPlan(null);
-    setError(null);
   }
 
   if (isResultsView && plan) {
@@ -1225,15 +1067,6 @@ export function TripPlanner({ stations }: TripPlannerProps) {
             <h1 className="mt-1 text-3xl font-bold text-foreground">Your charging route</h1>
           </div>
         </div>
-
-        {plan.source === "demo" ? (
-          <div role="status" className="rounded-2xl border border-primary/40 bg-surface p-4 text-sm leading-6 text-foreground">
-            <p className="font-bold text-primary">Demo route active</p>
-            <p className="mt-1 text-muted">
-              Google routing is unavailable, so this Lahore-Islamabad itinerary uses sample distances and charging stops. Verify chargers and road conditions before travelling.
-            </p>
-          </div>
-        ) : null}
 
         <GoogleMap
           stations={mapStations}
@@ -1325,23 +1158,6 @@ export function TripPlanner({ stations }: TripPlannerProps) {
             </div>
           </fieldset>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-muted">Try demo:</span>
-            <button
-              type="button"
-              onClick={() => loadDemoDirection("Lahore", "Islamabad")}
-              className="rounded-full border border-border bg-secondary px-3 py-2 font-semibold text-foreground transition hover:border-primary hover:text-primary"
-            >
-              Lahore → Islamabad
-            </button>
-            <button
-              type="button"
-              onClick={() => loadDemoDirection("Islamabad", "Lahore")}
-              className="rounded-full border border-border bg-secondary px-3 py-2 font-semibold text-foreground transition hover:border-primary hover:text-primary"
-            >
-              Islamabad → Lahore
-            </button>
-          </div>
 
           {usingSavedRange ? (
             <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">

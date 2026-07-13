@@ -1,9 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import { TripPlanner } from "@/src/components/trip/TripPlanner";
+import { requireSessionAccess } from "@/src/lib/auth-guard";
 import { stationsService } from "@/src/services/stations.service";
 
 export default async function PlanTripPage() {
+  await requireSessionAccess();
   const stations = await stationsService.list();
 
   return (

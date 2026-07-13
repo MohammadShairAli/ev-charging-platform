@@ -28,7 +28,7 @@ export class SupabaseRestClient {
         apikey: this.key,
         Authorization: `Bearer ${this.key}`,
       },
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -54,6 +54,7 @@ export class SupabaseRestClient {
         "Content-Type": "application/json",
         Prefer: "resolution=merge-duplicates,return=representation",
       },
+      cache: "no-store",
       body: JSON.stringify(rows),
     });
 

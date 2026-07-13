@@ -36,9 +36,11 @@ export function StationCard({ station, showPlaceImage = false, showMapButton = f
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-            {station.operator || "Operator unavailable"}
-          </p>
+          {station.operator ? (
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              {station.operator}
+            </p>
+          ) : null}
           <h3 className="mt-1 text-lg font-semibold leading-6 text-foreground">{station.name}</h3>
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{station.address || "Address unavailable"}</p>
         </div>
