@@ -25,7 +25,7 @@ export function StationList({
 }: StationListProps) {
   const [origin, setOrigin] = useState<LatLngLiteral | null>(null);
   const [nearbyStations, setNearbyStations] = useState<Station[] | null>(null);
-  const [nearbyStatus, setNearbyStatus] = useState<"idle" | "loading" | "unavailable">(
+  const [nearbyStatus, setNearbyStatus] = useState<"loading" | "idle" | "unavailable">(
     useNearbyApi ? "loading" : "idle",
   );
   const stationsWithDistance = useMemo(() => {
@@ -104,16 +104,7 @@ export function StationList({
   }, [useNearbyApi]);
 
   if (useNearbyApi && !nearbyStations?.length) {
-    return (
-      <EmptyState
-        title={nearbyStatus === "loading" ? "Finding nearby chargers" : "Nearby chargers unavailable"}
-        message={
-          nearbyStatus === "loading"
-            ? "Checking your current location before showing backup options."
-            : "Allow location access to show nearby backup charging options."
-        }
-      />
-    );
+    return <StationListSkeleton count={limit || 3} dimmed={nearbyStatus === "unavailable"} />;
   }
 
   if (!stations.length && !nearbyStations?.length) {
@@ -129,6 +120,35 @@ export function StationList({
           showPlaceImage={showPlaceImage}
           showMapButton={showMapButton}
         />
+      ))}
+    </div>
+  );
+}
+
+function StationListSkeleton({ count, dimmed = false }: { count: number; dimmed?: boolean }) {
+  return (
+    <div className={`grid gap-4 sm:gap-5 ${dimmed ? "opacity-70" : ""}`} aria-hidden="true">
+      {Array.from({ length: count }, (_, index) => (
+        <div key={index} className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
+          <div className="flex items-start gap-4">
+            <div className="h-16 w-16 shrink-0 animate-pulse rounded-xl bg-surface-strong" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-4 w-3/4 animate-pulse rounded bg-surface-strong" />
+              <div className="h-3 w-full animate-pulse rounded bg-surface-strong" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-surface-strong" />
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-4">
+              <div className="h-4 w-16 animate-pulse rounded bg-surface-strong" />
+              <div className="h-4 w-24 animate-pulse rounded bg-surface-strong" />
+            </div>
+            <div className="flex gap-2">
+              <div className="h-11 w-28 animate-pulse rounded-lg bg-surface-strong" />
+              <div className="h-11 w-11 animate-pulse rounded-lg bg-surface-strong" />
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );
