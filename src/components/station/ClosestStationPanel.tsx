@@ -77,11 +77,35 @@ export function ClosestStationPanel({
     : "/icon.png";
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      return;
-    }
+    const fetchNearbyStations = (currentOrigin: LatLngLiteral) => {
+      const params = new URLSearchParams({
+        lat: String(currentOrigin.lat),
+        lng: String(currentOrigin.lng),
+        sort: "distance",
+      });
+
+      fetch(`/api/stations?${params.toString()}`)
+        .then((response) => response.json())
+        .then((data: { stations?: Station[] }) => {
+          if (!cancelled && data.stations?.length) {
+            setNearbyStations(data.stations);
+          }
+        })
+        .catch(() => undefined);
+    };
 
     let cancelled = false;
+
+    if (!navigator.geolocation) {
+      window.setTimeout(() => {
+        if (!cancelled) {
+          setOrigin(fallbackOrigin);
+          setLocationLabel("Estimated from Lahore Gulberg");
+          fetchNearbyStations(fallbackOrigin);
+        }
+      }, 0);
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -92,24 +116,12 @@ export function ClosestStationPanel({
 
         setOrigin(currentOrigin);
         setLocationLabel("Using your current location");
-
-        const params = new URLSearchParams({
-          lat: String(currentOrigin.lat),
-          lng: String(currentOrigin.lng),
-          sort: "distance",
-        });
-
-        fetch(`/api/stations?${params.toString()}`)
-          .then((response) => response.json())
-          .then((data: { stations?: Station[] }) => {
-            if (!cancelled && data.stations?.length) {
-              setNearbyStations(data.stations);
-            }
-          })
-          .catch(() => undefined);
+        fetchNearbyStations(currentOrigin);
       },
       () => {
-        setLocationLabel("Location permission not enabled");
+        setOrigin(fallbackOrigin);
+        setLocationLabel("Estimated from Lahore Gulberg");
+        fetchNearbyStations(fallbackOrigin);
       },
       {
         enableHighAccuracy: true,
@@ -121,7 +133,7 @@ export function ClosestStationPanel({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fallbackOrigin]);
 
   useEffect(() => {
     if (!closest) {

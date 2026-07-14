@@ -14,6 +14,7 @@ type StationListProps = {
   showMapButton?: boolean;
   limit?: number;
   useNearbyApi?: boolean;
+  fallbackOrigin?: LatLngLiteral;
 };
 
 export function StationList({
@@ -22,6 +23,7 @@ export function StationList({
   showMapButton = false,
   limit,
   useNearbyApi = false,
+  fallbackOrigin,
 }: StationListProps) {
   const [origin, setOrigin] = useState<LatLngLiteral | null>(null);
   const [nearbyStations, setNearbyStations] = useState<Station[] | null>(null);
@@ -52,9 +54,41 @@ export function StationList({
   }, [limit, nearbyStations, origin, stations, useNearbyApi]);
 
   useEffect(() => {
+    const fetchNearbyStations = (currentOrigin: LatLngLiteral) => {
+      const params = new URLSearchParams({
+        lat: String(currentOrigin.lat),
+        lng: String(currentOrigin.lng),
+        sort: "distance",
+      });
+
+      fetch(`/api/stations?${params.toString()}`)
+        .then((response) => response.json())
+        .then((data: { stations?: Station[] }) => {
+          if (data.stations?.length) {
+            setNearbyStations(data.stations);
+            setNearbyStatus("idle");
+          } else {
+            setNearbyStatus("unavailable");
+          }
+        })
+        .catch(() => setNearbyStatus("unavailable"));
+    };
+
+    const loadFallbackOrigin = () => {
+      if (!useNearbyApi || !fallbackOrigin) {
+        if (useNearbyApi) {
+          setNearbyStatus("unavailable");
+        }
+        return;
+      }
+
+      setOrigin(fallbackOrigin);
+      fetchNearbyStations(fallbackOrigin);
+    };
+
     if (!navigator.geolocation) {
       if (useNearbyApi) {
-        window.setTimeout(() => setNearbyStatus("unavailable"), 0);
+        window.setTimeout(loadFallbackOrigin, 0);
       }
       return;
     }
@@ -72,28 +106,10 @@ export function StationList({
           return;
         }
 
-        const params = new URLSearchParams({
-          lat: String(currentOrigin.lat),
-          lng: String(currentOrigin.lng),
-          sort: "distance",
-        });
-
-        fetch(`/api/stations?${params.toString()}`)
-          .then((response) => response.json())
-          .then((data: { stations?: Station[] }) => {
-            if (data.stations?.length) {
-              setNearbyStations(data.stations);
-              setNearbyStatus("idle");
-            } else {
-              setNearbyStatus("unavailable");
-            }
-          })
-          .catch(() => setNearbyStatus("unavailable"));
+        fetchNearbyStations(currentOrigin);
       },
       () => {
-        if (useNearbyApi) {
-          setNearbyStatus("unavailable");
-        }
+        loadFallbackOrigin();
       },
       {
         enableHighAccuracy: true,
@@ -101,7 +117,7 @@ export function StationList({
         timeout: 8000,
       },
     );
-  }, [useNearbyApi]);
+  }, [fallbackOrigin, useNearbyApi]);
 
   if (useNearbyApi && !nearbyStations?.length) {
     return <StationListSkeleton count={limit || 3} dimmed={nearbyStatus === "unavailable"} />;

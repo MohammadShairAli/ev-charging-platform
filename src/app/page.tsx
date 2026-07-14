@@ -12,6 +12,7 @@ import { stationsService } from "@/src/services/stations.service";
 export default async function HomePage() {
   await requireSessionAccess();
   const stations = await stationsService.list() ?? [];
+  const emergencyFallbackOrigin = appConfig.google.lahoreGulbergCenter;
 
   return (
     <div>
@@ -19,7 +20,7 @@ export default async function HomePage() {
         <div className="relative h-[20rem] overflow-hidden">
           <ClosestStationPanel
             stations={stations}
-            fallbackOrigin={appConfig.google.pakistanCenter}
+            fallbackOrigin={emergencyFallbackOrigin}
             mapClassName="h-full min-h-full rounded-none border-0"
             showDetails={false}
           />
@@ -28,7 +29,7 @@ export default async function HomePage() {
         <div className="relative z-10 -mt-8 px-4 pb-2">
           <ClosestStationPanel
             stations={stations}
-            fallbackOrigin={appConfig.google.pakistanCenter}
+            fallbackOrigin={emergencyFallbackOrigin}
             showMap={false}
           />
 
@@ -60,7 +61,7 @@ export default async function HomePage() {
           <div className="lg:pl-4">
             <ClosestStationPanel
               stations={stations}
-              fallbackOrigin={appConfig.google.pakistanCenter}
+              fallbackOrigin={emergencyFallbackOrigin}
               variant="desktop"
             />
           </div>
@@ -76,7 +77,14 @@ export default async function HomePage() {
           </div>
           <ButtonLink href={ROUTES.stations}>View All Stations</ButtonLink>
         </div>
-        <StationList stations={stations} showPlaceImage showMapButton limit={3} useNearbyApi />
+        <StationList
+          stations={stations}
+          showPlaceImage
+          showMapButton
+          limit={3}
+          useNearbyApi
+          fallbackOrigin={emergencyFallbackOrigin}
+        />
       </section>
     </div>
   );

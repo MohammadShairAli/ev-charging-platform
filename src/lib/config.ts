@@ -16,6 +16,10 @@ export const appConfig = {
       lat: 30.3753,
       lng: 69.3451,
     } satisfies LatLngLiteral,
+    lahoreGulbergCenter: {
+      lat: 31.5102,
+      lng: 74.3441,
+    } satisfies LatLngLiteral,
     defaultZoom: 5,
     stationZoom: 14,
   },
