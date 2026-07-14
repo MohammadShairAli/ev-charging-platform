@@ -31,6 +31,7 @@ const nonChargingBusinessWords = [
   "service center",
   "spare parts",
   "parts",
+    
 ];
 
 function stationText(station: Pick<Station, "name" | "address" | "operator">) {
