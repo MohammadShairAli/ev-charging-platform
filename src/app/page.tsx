@@ -12,7 +12,6 @@ import { stationsService } from "@/src/services/stations.service";
 export default async function HomePage() {
   await requireSessionAccess();
   const stations = await stationsService.list() ?? [];
-  const nearbyStations = stations.slice(0, 3);
 
   return (
     <div>
@@ -77,7 +76,7 @@ export default async function HomePage() {
           </div>
           <ButtonLink href={ROUTES.stations}>View All Stations</ButtonLink>
         </div>
-        <StationList stations={nearbyStations} showPlaceImage showMapButton />
+        <StationList stations={stations} showPlaceImage showMapButton limit={3} />
       </section>
     </div>
   );

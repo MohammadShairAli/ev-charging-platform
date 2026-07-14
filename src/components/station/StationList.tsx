@@ -12,16 +12,19 @@ type StationListProps = {
   stations: Station[];
   showPlaceImage?: boolean;
   showMapButton?: boolean;
+  limit?: number;
 };
 
-export function StationList({ stations, showPlaceImage = false, showMapButton = false }: StationListProps) {
+export function StationList({ stations, showPlaceImage = false, showMapButton = false, limit }: StationListProps) {
   const [origin, setOrigin] = useState<LatLngLiteral | null>(null);
   const stationsWithDistance = useMemo(() => {
+    let sortedStations = stations;
+
     if (!origin) {
-      return stations;
+      return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
     }
 
-    return stations.map((station) => {
+    sortedStations = stations.map((station) => {
       const coordinates = stationCoordinates(station);
 
       if (!coordinates) {
@@ -33,7 +36,9 @@ export function StationList({ stations, showPlaceImage = false, showMapButton = 
         distanceKm: calculateDistanceKm(origin, coordinates),
       };
     }).sort((first, second) => (first.distanceKm ?? Number.POSITIVE_INFINITY) - (second.distanceKm ?? Number.POSITIVE_INFINITY));
-  }, [origin, stations]);
+
+    return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
+  }, [limit, origin, stations]);
 
   useEffect(() => {
     if (!navigator.geolocation) {
