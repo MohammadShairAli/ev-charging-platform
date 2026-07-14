@@ -25,8 +25,11 @@ export function StationList({
 }: StationListProps) {
   const [origin, setOrigin] = useState<LatLngLiteral | null>(null);
   const [nearbyStations, setNearbyStations] = useState<Station[] | null>(null);
+  const [nearbyStatus, setNearbyStatus] = useState<"idle" | "loading" | "unavailable">(
+    useNearbyApi ? "loading" : "idle",
+  );
   const stationsWithDistance = useMemo(() => {
-    let sortedStations = nearbyStations || stations;
+    let sortedStations = useNearbyApi ? nearbyStations || [] : stations;
 
     if (!origin) {
       return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
@@ -46,10 +49,13 @@ export function StationList({
     }).sort((first, second) => (first.distanceKm ?? Number.POSITIVE_INFINITY) - (second.distanceKm ?? Number.POSITIVE_INFINITY));
 
     return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
-  }, [limit, nearbyStations, origin, stations]);
+  }, [limit, nearbyStations, origin, stations, useNearbyApi]);
 
   useEffect(() => {
     if (!navigator.geolocation) {
+      if (useNearbyApi) {
+        window.setTimeout(() => setNearbyStatus("unavailable"), 0);
+      }
       return;
     }
 
@@ -77,11 +83,18 @@ export function StationList({
           .then((data: { stations?: Station[] }) => {
             if (data.stations?.length) {
               setNearbyStations(data.stations);
+              setNearbyStatus("idle");
+            } else {
+              setNearbyStatus("unavailable");
             }
           })
-          .catch(() => undefined);
+          .catch(() => setNearbyStatus("unavailable"));
       },
-      () => undefined,
+      () => {
+        if (useNearbyApi) {
+          setNearbyStatus("unavailable");
+        }
+      },
       {
         enableHighAccuracy: true,
         maximumAge: 300000,
@@ -89,6 +102,19 @@ export function StationList({
       },
     );
   }, [useNearbyApi]);
+
+  if (useNearbyApi && !nearbyStations?.length) {
+    return (
+      <EmptyState
+        title={nearbyStatus === "loading" ? "Finding nearby chargers" : "Nearby chargers unavailable"}
+        message={
+          nearbyStatus === "loading"
+            ? "Checking your current location before showing backup options."
+            : "Allow location access to show nearby backup charging options."
+        }
+      />
+    );
+  }
 
   if (!stations.length && !nearbyStations?.length) {
     return <EmptyState title="No stations found" message={COPY.noStations} />;
