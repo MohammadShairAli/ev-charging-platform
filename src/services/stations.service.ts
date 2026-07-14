@@ -54,6 +54,24 @@ function applyFilters(stations: Station[], filters: StationFilters = {}) {
   });
 }
 
+function mergeStations(primary: Station[], secondary: Station[]) {
+  const seen = new Set<string>();
+  const merged: Station[] = [];
+
+  for (const station of [...primary, ...secondary]) {
+    const key = station.google_place_id || station.id;
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    merged.push(station);
+  }
+
+  return merged;
+}
+
 export class StationsService {
   async list(filters: StationFilters = {}) {
     const params: Record<string, string> = {
@@ -71,14 +89,27 @@ export class StationsService {
         const rows = await supabase.get<Station[]>("stations", params);
 
         if (rows.length) {
-          return applyFilters(rows.map(normalizeStation), filters);
+          const databaseStations = rows.map(normalizeStation);
+
+          if (filters.origin) {
+            try {
+              const nearbyGoogleStations = await googleService.searchNearbyEvStations(filters.origin);
+              return applyFilters(mergeStations(databaseStations, nearbyGoogleStations), filters);
+            } catch {
+              return applyFilters(databaseStations, filters);
+            }
+          }
+
+          return applyFilters(databaseStations, filters);
         }
       } catch {
         // Google remains a live source when the database API is unavailable.
       }
     }
 
-    const googleStations = await googleService.searchEvStations(filters.q || "Pakistan");
+    const googleStations = filters.origin
+      ? await googleService.searchNearbyEvStations(filters.origin)
+      : await googleService.searchEvStations(filters.q || "Pakistan");
     return applyFilters(googleStations, filters);
   }
 

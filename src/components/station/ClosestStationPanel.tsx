@@ -66,9 +66,11 @@ export function ClosestStationPanel({
   showDetails = true,
 }: ClosestStationPanelProps) {
   const [origin, setOrigin] = useState(fallbackOrigin);
+  const [nearbyStations, setNearbyStations] = useState<Station[] | null>(null);
   const [locationLabel, setLocationLabel] = useState("Estimated from Pakistan center");
   const [directions, setDirections] = useState<DirectionsResult>(defaultDirections);
-  const closest = useMemo(() => findClosestStation(stations, origin), [origin, stations]);
+  const liveStations = nearbyStations || stations;
+  const closest = useMemo(() => findClosestStation(liveStations, origin), [origin, liveStations]);
   const directionsUrl = closest ? googleMapsDirectionsUrl(closest.station) : null;
   const closestImageUrl = closest?.station.google_place_id
     ? `/api/place-photo?placeId=${encodeURIComponent(closest.station.google_place_id)}`
@@ -79,13 +81,32 @@ export function ClosestStationPanel({
       return;
     }
 
+    let cancelled = false;
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setOrigin({
+        const currentOrigin = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        });
+        };
+
+        setOrigin(currentOrigin);
         setLocationLabel("Using your current location");
+
+        const params = new URLSearchParams({
+          lat: String(currentOrigin.lat),
+          lng: String(currentOrigin.lng),
+          sort: "distance",
+        });
+
+        fetch(`/api/stations?${params.toString()}`)
+          .then((response) => response.json())
+          .then((data: { stations?: Station[] }) => {
+            if (!cancelled && data.stations?.length) {
+              setNearbyStations(data.stations);
+            }
+          })
+          .catch(() => undefined);
       },
       () => {
         setLocationLabel("Location permission not enabled");
@@ -96,6 +117,10 @@ export function ClosestStationPanel({
         timeout: 8000,
       },
     );
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -140,7 +165,7 @@ export function ClosestStationPanel({
     };
   }, [closest, origin]);
 
-  const selectedStations = useMemo(() => closest ? [closest.station] : stations, [closest, stations]);
+  const selectedStations = useMemo(() => closest ? [closest.station] : liveStations, [closest, liveStations]);
   const handleRouteResolved = useCallback((route: { distanceText: string; durationText: string }) => {
     setDirections((current) => ({ ...current, ...route }));
   }, []);

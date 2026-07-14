@@ -6,6 +6,7 @@ type GooglePlace = {
   place_id?: string;
   name?: string;
   formatted_address?: string;
+  vicinity?: string;
   geometry?: {
     location?: {
       lat: number;
@@ -54,7 +55,7 @@ function normalizePlace(place: GooglePlace): Station | null {
     id: place.place_id,
     google_place_id: place.place_id,
     name: place.name,
-    address: place.formatted_address || null,
+    address: place.formatted_address || place.vicinity || null,
     latitude: location.lat,
     longitude: location.lng,
     phone: place.formatted_phone_number || null,
@@ -71,6 +72,28 @@ export class GoogleService {
     const key = requireGoogleKey();
     const url = new URL(`${appConfig.google.placesApiUrl}/textsearch/json`);
     url.searchParams.set("query", `${query || "Pakistan"} EV charging station`);
+    url.searchParams.set("key", key);
+
+    const response = await fetch(url, { cache: "no-store" });
+    const data = (await response.json()) as PlacesResponse;
+
+    if (!response.ok || data.status === "REQUEST_DENIED") {
+      throw new Error("Google Places API unavailable.");
+    }
+
+    return (data.results || [])
+      .filter((place) => place.types?.includes("electric_vehicle_charging_station") || isLikelyGoogleChargingPlace(place))
+      .map(normalizePlace)
+      .filter((station): station is Station => Boolean(station));
+  }
+
+  async searchNearbyEvStations(origin: { lat: number; lng: number }, radiusMeters = 50000) {
+    const key = requireGoogleKey();
+    const url = new URL(`${appConfig.google.placesApiUrl}/nearbysearch/json`);
+    url.searchParams.set("location", `${origin.lat},${origin.lng}`);
+    url.searchParams.set("radius", String(Math.min(Math.max(radiusMeters, 1000), 50000)));
+    url.searchParams.set("keyword", "EV charging station");
+    url.searchParams.set("type", "electric_vehicle_charging_station");
     url.searchParams.set("key", key);
 
     const response = await fetch(url, { cache: "no-store" });
