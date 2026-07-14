@@ -13,18 +13,26 @@ type StationListProps = {
   showPlaceImage?: boolean;
   showMapButton?: boolean;
   limit?: number;
+  useNearbyApi?: boolean;
 };
 
-export function StationList({ stations, showPlaceImage = false, showMapButton = false, limit }: StationListProps) {
+export function StationList({
+  stations,
+  showPlaceImage = false,
+  showMapButton = false,
+  limit,
+  useNearbyApi = false,
+}: StationListProps) {
   const [origin, setOrigin] = useState<LatLngLiteral | null>(null);
+  const [nearbyStations, setNearbyStations] = useState<Station[] | null>(null);
   const stationsWithDistance = useMemo(() => {
-    let sortedStations = stations;
+    let sortedStations = nearbyStations || stations;
 
     if (!origin) {
       return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
     }
 
-    sortedStations = stations.map((station) => {
+    sortedStations = sortedStations.map((station) => {
       const coordinates = stationCoordinates(station);
 
       if (!coordinates) {
@@ -38,7 +46,7 @@ export function StationList({ stations, showPlaceImage = false, showMapButton = 
     }).sort((first, second) => (first.distanceKm ?? Number.POSITIVE_INFINITY) - (second.distanceKm ?? Number.POSITIVE_INFINITY));
 
     return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
-  }, [limit, origin, stations]);
+  }, [limit, nearbyStations, origin, stations]);
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -47,10 +55,31 @@ export function StationList({ stations, showPlaceImage = false, showMapButton = 
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setOrigin({
+        const currentOrigin = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
+        };
+
+        setOrigin(currentOrigin);
+
+        if (!useNearbyApi) {
+          return;
+        }
+
+        const params = new URLSearchParams({
+          lat: String(currentOrigin.lat),
+          lng: String(currentOrigin.lng),
+          sort: "distance",
         });
+
+        fetch(`/api/stations?${params.toString()}`)
+          .then((response) => response.json())
+          .then((data: { stations?: Station[] }) => {
+            if (data.stations?.length) {
+              setNearbyStations(data.stations);
+            }
+          })
+          .catch(() => undefined);
       },
       () => undefined,
       {
@@ -59,9 +88,9 @@ export function StationList({ stations, showPlaceImage = false, showMapButton = 
         timeout: 8000,
       },
     );
-  }, []);
+  }, [useNearbyApi]);
 
-  if (!stations.length) {
+  if (!stations.length && !nearbyStations?.length) {
     return <EmptyState title="No stations found" message={COPY.noStations} />;
   }
 
