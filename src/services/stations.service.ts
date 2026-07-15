@@ -2,7 +2,7 @@ import { supabase } from "@/src/lib/supabase";
 import { googleService } from "@/src/services/google.service";
 import type { Station, StationFilters } from "@/src/types";
 import { calculateDistanceKm } from "@/src/utils/distance";
-import { isLikelyChargingStation } from "@/src/utils/station-quality";
+import { isLikelyChargingStation, isStationInPakistan } from "@/src/utils/station-quality";
 
 function normalizeStation(row: Station): Station {
   return {
@@ -16,7 +16,7 @@ function normalizeStation(row: Station): Station {
 function applyFilters(stations: Station[], filters: StationFilters = {}) {
   const query = filters.q?.trim().toLowerCase();
 
-  let results = stations.filter(isLikelyChargingStation).map((station) => {
+  let results = stations.filter(isLikelyChargingStation).filter(isStationInPakistan).map((station) => {
     if (!filters.origin || station.latitude === null || station.longitude === null) {
       return station;
     }
@@ -134,11 +134,13 @@ export class StationsService {
   }
 
   async saveFromGoogle(stations: Station[]) {
-    if (!supabase.isConfigured || !stations.length) {
+    const pakistanStations = stations.filter(isStationInPakistan);
+
+    if (!supabase.isConfigured || !pakistanStations.length) {
       return [];
     }
 
-    return supabase.upsert("stations", stations, "google_place_id");
+    return supabase.upsert("stations", pakistanStations, "google_place_id");
   }
 }
 

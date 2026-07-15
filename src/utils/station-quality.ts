@@ -54,3 +54,27 @@ export function isLikelyChargingStation(station: Pick<Station, "name" | "address
 
   return hasChargingWord;
 }
+
+export function isStationInPakistan(
+  station: Pick<Station, "address" | "latitude" | "longitude">,
+) {
+  const address = station.address?.toLowerCase() || "";
+
+  if (/\bpakistan\b/.test(address)) {
+    return true;
+  }
+
+  if (/\b(india|bharat|afghanistan|iran|china)\b/.test(address)) {
+    return false;
+  }
+
+  const latitude = station.latitude === null ? Number.NaN : Number(station.latitude);
+  const longitude = station.longitude === null ? Number.NaN : Number(station.longitude);
+
+  return Number.isFinite(latitude)
+    && Number.isFinite(longitude)
+    && latitude >= 23.4
+    && latitude <= 37.2
+    && longitude >= 60.7
+    && longitude <= 77.2;
+}

@@ -37,7 +37,11 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
     <>
       <section className="bg-background sm:hidden">
         <div className="relative h-[19rem] overflow-hidden">
-          <GoogleMap stations={stations} className="h-full min-h-full rounded-none border-0 shadow-none" />
+          <GoogleMap
+            stations={paginatedStations}
+            selectedStationId={paginatedStations[0]?.id}
+            className="h-full min-h-full rounded-none border-0 shadow-none"
+          />
         </div>
 
         <div className="relative z-10 -mt-8 rounded-t-[1.6rem] border border-border bg-secondary px-3 pb-4 pt-3">
@@ -87,7 +91,7 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
           </div>
           <div className="order-1 lg:sticky lg:top-24 lg:order-2 lg:self-start">
             <div className="rounded-lg border border-border bg-surface p-2 sm:p-3">
-              <StationMapShell stations={stations} />
+              <StationMapShell stations={paginatedStations} />
             </div>
           </div>
         </div>
@@ -228,5 +232,5 @@ function PaginationLink({
 
 async function StationMapShell({ stations }: { stations: Awaited<ReturnType<typeof stationsService.list>> }) {
   const { GoogleMap } = await import("@/src/components/map/GoogleMap");
-  return <GoogleMap stations={stations} />;
+  return <GoogleMap stations={stations} selectedStationId={stations[0]?.id} />;
 }

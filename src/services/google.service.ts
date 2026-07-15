@@ -9,7 +9,7 @@ import type {
   StationAmenitiesData,
 } from "@/src/types";
 import { calculateDistanceKm } from "@/src/utils/distance";
-import { isLikelyChargingStation } from "@/src/utils/station-quality";
+import { isLikelyChargingStation, isStationInPakistan } from "@/src/utils/station-quality";
 
 type GooglePlace = {
   place_id?: string;
@@ -118,7 +118,8 @@ export class GoogleService {
   async searchEvStations(query: string) {
     const key = requireGoogleKey();
     const url = new URL(`${appConfig.google.placesApiUrl}/textsearch/json`);
-    url.searchParams.set("query", `${query || "Pakistan"} EV charging station`);
+    url.searchParams.set("query", `${query || ""} EV charging station in Pakistan`.trim());
+    url.searchParams.set("region", "pk");
     url.searchParams.set("key", key);
 
     const response = await fetch(url, { cache: "no-store" });
@@ -131,7 +132,8 @@ export class GoogleService {
     return (data.results || [])
       .filter((place) => place.types?.includes("electric_vehicle_charging_station") || isLikelyGoogleChargingPlace(place))
       .map(normalizePlace)
-      .filter((station): station is Station => Boolean(station));
+      .filter((station): station is Station => Boolean(station))
+      .filter(isStationInPakistan);
   }
 
   async searchNearbyEvStations(origin: { lat: number; lng: number }, radiusMeters = 50000) {
@@ -141,6 +143,7 @@ export class GoogleService {
     url.searchParams.set("radius", String(Math.min(Math.max(radiusMeters, 1000), 50000)));
     url.searchParams.set("keyword", "EV charging station");
     url.searchParams.set("type", "electric_vehicle_charging_station");
+    url.searchParams.set("region", "pk");
     url.searchParams.set("key", key);
 
     const response = await fetch(url, { cache: "no-store" });
@@ -153,7 +156,8 @@ export class GoogleService {
     return (data.results || [])
       .filter((place) => place.types?.includes("electric_vehicle_charging_station") || isLikelyGoogleChargingPlace(place))
       .map(normalizePlace)
-      .filter((station): station is Station => Boolean(station));
+      .filter((station): station is Station => Boolean(station))
+      .filter(isStationInPakistan);
   }
 
   async findEvStationByPlaceId(placeId: string) {
@@ -174,7 +178,8 @@ export class GoogleService {
       return null;
     }
 
-    return normalizePlace(data.result);
+    const station = normalizePlace(data.result);
+    return station && isStationInPakistan(station) ? station : null;
   }
 
   async getPlaceAmenities(placeId: string): Promise<StationAmenitiesData> {

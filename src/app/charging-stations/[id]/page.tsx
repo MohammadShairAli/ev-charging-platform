@@ -64,7 +64,18 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
         </div>
       </header>
 
-      <div className="mt-7 grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+      <div className="lg:hidden mt-7 grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+        <div className="lg:sticky lg:top-24">
+          <StationRouteMap station={station} fallbackOrigin={appConfig.google.lahoreGulbergCenter} />
+        </div>
+        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
+          <StationAmenities amenities={amenities} />
+          <NearbyFoodPlaces places={nearbyFood} />
+          <StationComingSoonSpecs className="mt-6" />
+        </div>
+      </div>
+      <div className="hidden mt-7 lg:grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+        
         <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
           <StationAmenities amenities={amenities} />
           <NearbyFoodPlaces places={nearbyFood} />
