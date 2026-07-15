@@ -2,193 +2,60 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
+import { useEmergencyStationData } from "@/src/components/station/EmergencyStationProvider";
 import { ROUTES } from "@/src/lib/constants";
-import type { DirectionsResult, LatLngLiteral, Station } from "@/src/types";
-import { calculateDistanceKm, formatDistance } from "@/src/utils/distance";
-import { googleMapsDirectionsUrl, stationCoordinates } from "@/src/utils/station";
-import { isLikelyChargingStation } from "@/src/utils/station-quality";
+import { formatDistance } from "@/src/utils/distance";
+import { googleMapsDirectionsUrl } from "@/src/utils/station";
 
 type ClosestStationPanelProps = {
-  stations: Station[];
-  fallbackOrigin: LatLngLiteral;
   mapClassName?: string;
   variant?: "mobile" | "desktop";
   showMap?: boolean;
   showDetails?: boolean;
 };
 
-type ClosestStation = {
-  station: Station;
-  coordinates: LatLngLiteral;
-  directDistanceKm: number;
-};
-
-const defaultDirections: DirectionsResult = {
-  distanceText: "Distance unavailable",
-  durationText: "ETA unavailable",
-  polyline: null,
-};
-
-function findClosestStation(stations: Station[], origin: LatLngLiteral): ClosestStation | null {
-  return stations.reduce<ClosestStation | null>((closest, station) => {
-    if (!isLikelyChargingStation(station)) {
-      return closest;
-    }
-
-    const coordinates = stationCoordinates(station);
-
-    if (!coordinates) {
-      return closest;
-    }
-
-    const directDistanceKm = calculateDistanceKm(origin, coordinates);
-
-    if (!closest || directDistanceKm < closest.directDistanceKm) {
-      return {
-        station,
-        coordinates,
-        directDistanceKm,
-      };
-    }
-
-    return closest;
-  }, null);
-}
-
 export function ClosestStationPanel({
-  stations,
-  fallbackOrigin,
   mapClassName = "",
   variant = "mobile",
   showMap = true,
   showDetails = true,
 }: ClosestStationPanelProps) {
-  const [origin, setOrigin] = useState(fallbackOrigin);
-  const [nearbyStations, setNearbyStations] = useState<Station[] | null>(null);
-  const [locationLabel, setLocationLabel] = useState("Estimated from Pakistan center");
-  const [directions, setDirections] = useState<DirectionsResult>(defaultDirections);
-  const liveStations = nearbyStations || stations;
-  const closest = useMemo(() => findClosestStation(liveStations, origin), [origin, liveStations]);
+  const {
+    origin,
+    locationLabel,
+    nearbyStations,
+    closest,
+    directions,
+    directionsReady,
+    isDesktop,
+    handleRouteResolved,
+  } = useEmergencyStationData();
+  const isActiveViewport = isDesktop === null || (variant === "desktop" ? isDesktop : !isDesktop);
+  const isLoading = !origin || !nearbyStations || !directionsReady;
   const directionsUrl = closest ? googleMapsDirectionsUrl(closest.station) : null;
   const closestImageUrl = closest?.station.google_place_id
     ? `/api/place-photo?placeId=${encodeURIComponent(closest.station.google_place_id)}`
     : "/icon.png";
 
-  useEffect(() => {
-    const fetchNearbyStations = (currentOrigin: LatLngLiteral) => {
-      const params = new URLSearchParams({
-        lat: String(currentOrigin.lat),
-        lng: String(currentOrigin.lng),
-        sort: "distance",
-      });
+  const selectedStations = useMemo(() => closest ? [closest.station] : nearbyStations || [], [closest, nearbyStations]);
 
-      fetch(`/api/stations?${params.toString()}`)
-        .then((response) => response.json())
-        .then((data: { stations?: Station[] }) => {
-          if (!cancelled && data.stations?.length) {
-            setNearbyStations(data.stations);
-          }
-        })
-        .catch(() => undefined);
-    };
-
-    let cancelled = false;
-
-    if (!navigator.geolocation) {
-      window.setTimeout(() => {
-        if (!cancelled) {
-          setOrigin(fallbackOrigin);
-          setLocationLabel("Estimated from Lahore Gulberg");
-          fetchNearbyStations(fallbackOrigin);
-        }
-      }, 0);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const currentOrigin = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-
-        setOrigin(currentOrigin);
-        setLocationLabel("Using your current location");
-        fetchNearbyStations(currentOrigin);
-      },
-      () => {
-        setOrigin(fallbackOrigin);
-        setLocationLabel("Estimated from Lahore Gulberg");
-        fetchNearbyStations(fallbackOrigin);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 300000,
-        timeout: 8000,
-      },
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fallbackOrigin]);
-
-  useEffect(() => {
-    if (!closest) {
-      return;
-    }
-
-    let cancelled = false;
-
-    fetch("/api/directions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        origin,
-        destination: closest.coordinates,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data: { directions?: DirectionsResult }) => {
-        if (!cancelled) {
-          setDirections(data.directions || {
-            distanceText: `${closest.directDistanceKm.toFixed(1)} km`,
-            durationText: "ETA unavailable",
-            polyline: null,
-          });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDirections({
-            distanceText: `${closest.directDistanceKm.toFixed(1)} km`,
-            durationText: "ETA unavailable",
-            polyline: null,
-          });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [closest, origin]);
-
-  const selectedStations = useMemo(() => closest ? [closest.station] : liveStations, [closest, liveStations]);
-  const handleRouteResolved = useCallback((route: { distanceText: string; durationText: string }) => {
-    setDirections((current) => ({ ...current, ...route }));
-  }, []);
+  if (!isActiveViewport) {
+    return null;
+  }
 
   return (
     <div className={variant === "desktop" ? "grid gap-4" : showMap && !showDetails ? "h-full" : ""}>
-      {showMap ? (
+      {showMap && isLoading ? (
+        <LocationLoading className={mapClassName} map />
+      ) : null}
+
+      {showMap && !isLoading ? (
         <GoogleMap
           stations={selectedStations}
           selectedStationId={closest?.station.id}
-          center={closest?.coordinates || fallbackOrigin}
+          center={closest?.coordinates || origin || undefined}
           zoom={closest ? 12 : undefined}
           routePolyline={directions.polyline}
           routeOrigin={origin}
@@ -198,7 +65,9 @@ export function ClosestStationPanel({
         />
       ) : null}
 
-      {showDetails && closest ? (
+      {showDetails && !showMap && isLoading ? <LocationLoading /> : null}
+
+      {showDetails && !isLoading && closest ? (
         <div className="rounded-2xl border border-border bg-secondary p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface-strong">
@@ -252,9 +121,26 @@ export function ClosestStationPanel({
         </div>
       ) : null}
 
-      {showDetails && !closest ? (
+      {showDetails && !isLoading && !closest ? (
         <div className="rounded-xl bg-secondary p-4 text-sm font-medium text-muted">No station coordinates available.</div>
       ) : null}
+    </div>
+  );
+}
+
+function LocationLoading({ className = "", map = false }: { className?: string; map?: boolean }) {
+  return (
+    <div
+      className={map
+        ? `grid min-h-[17rem] h-full place-items-center bg-background sm:min-h-96 ${className}`
+        : "flex min-h-28 items-center justify-center rounded-2xl border border-border bg-secondary p-4"}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="flex items-center gap-3 text-sm font-semibold text-muted">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-border border-t-primary" aria-hidden="true" />
+        Finding the closest charger near you…
+      </div>
     </div>
   );
 }

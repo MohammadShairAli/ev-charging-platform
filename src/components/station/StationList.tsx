@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { StationCard } from "@/src/components/station/StationCard";
+import { useOptionalEmergencyStationData } from "@/src/components/station/EmergencyStationProvider";
 import { COPY } from "@/src/lib/constants";
 import type { LatLngLiteral, Station } from "@/src/types";
 import { calculateDistanceKm } from "@/src/utils/distance";
@@ -25,15 +26,19 @@ export function StationList({
   useNearbyApi = false,
   fallbackOrigin,
 }: StationListProps) {
+  const emergencyData = useOptionalEmergencyStationData();
   const [origin, setOrigin] = useState<LatLngLiteral | null>(null);
   const [nearbyStations, setNearbyStations] = useState<Station[] | null>(null);
   const [nearbyStatus, setNearbyStatus] = useState<"loading" | "idle" | "unavailable">(
     useNearbyApi ? "loading" : "idle",
   );
+  const resolvedOrigin = useNearbyApi && emergencyData ? emergencyData.origin : origin;
+  const resolvedNearbyStations = useNearbyApi && emergencyData ? emergencyData.nearbyStations : nearbyStations;
+  const resolvedNearbyStatus = useNearbyApi && emergencyData ? emergencyData.nearbyStatus : nearbyStatus;
   const stationsWithDistance = useMemo(() => {
-    let sortedStations = useNearbyApi ? nearbyStations || [] : stations;
+    let sortedStations = useNearbyApi ? resolvedNearbyStations || [] : stations;
 
-    if (!origin) {
+    if (!resolvedOrigin) {
       return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
     }
 
@@ -46,14 +51,18 @@ export function StationList({
 
       return {
         ...station,
-        distanceKm: calculateDistanceKm(origin, coordinates),
+        distanceKm: calculateDistanceKm(resolvedOrigin, coordinates),
       };
     }).sort((first, second) => (first.distanceKm ?? Number.POSITIVE_INFINITY) - (second.distanceKm ?? Number.POSITIVE_INFINITY));
 
     return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
-  }, [limit, nearbyStations, origin, stations, useNearbyApi]);
+  }, [limit, resolvedNearbyStations, resolvedOrigin, stations, useNearbyApi]);
 
   useEffect(() => {
+    if (emergencyData) {
+      return;
+    }
+
     const fetchNearbyStations = (currentOrigin: LatLngLiteral) => {
       const params = new URLSearchParams({
         lat: String(currentOrigin.lat),
@@ -117,13 +126,13 @@ export function StationList({
         timeout: 8000,
       },
     );
-  }, [fallbackOrigin, useNearbyApi]);
+  }, [emergencyData, fallbackOrigin, useNearbyApi]);
 
-  if (useNearbyApi && !nearbyStations?.length) {
-    return <StationListSkeleton count={limit || 3} dimmed={nearbyStatus === "unavailable"} />;
+  if (useNearbyApi && !resolvedNearbyStations?.length) {
+    return <StationListSkeleton count={limit || 3} dimmed={resolvedNearbyStatus === "unavailable"} />;
   }
 
-  if (!stations.length && !nearbyStations?.length) {
+  if (!stations.length && !resolvedNearbyStations?.length) {
     return <EmptyState title="No stations found" message={COPY.noStations} />;
   }
 

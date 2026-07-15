@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { ClosestStationPanel } from "@/src/components/station/ClosestStationPanel";
+import { EmergencyStationProvider } from "@/src/components/station/EmergencyStationProvider";
 import { SearchBar } from "@/src/components/shared/SearchBar";
 import { StationList } from "@/src/components/station/StationList";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
@@ -15,12 +16,11 @@ export default async function HomePage() {
   const emergencyFallbackOrigin = appConfig.google.lahoreGulbergCenter;
 
   return (
-    <div>
+    <EmergencyStationProvider stations={stations} fallbackOrigin={emergencyFallbackOrigin}>
+      <div>
       <section className="relative bg-background sm:hidden">
         <div className="relative h-[20rem] overflow-hidden">
           <ClosestStationPanel
-            stations={stations}
-            fallbackOrigin={emergencyFallbackOrigin}
             mapClassName="h-full min-h-full rounded-none border-0"
             showDetails={false}
           />
@@ -28,8 +28,6 @@ export default async function HomePage() {
 
         <div className="relative z-10 -mt-8 px-4 pb-2">
           <ClosestStationPanel
-            stations={stations}
-            fallbackOrigin={emergencyFallbackOrigin}
             showMap={false}
           />
 
@@ -60,8 +58,6 @@ export default async function HomePage() {
           </div>
           <div className="lg:pl-4">
             <ClosestStationPanel
-              stations={stations}
-              fallbackOrigin={emergencyFallbackOrigin}
               variant="desktop"
             />
           </div>
@@ -86,7 +82,8 @@ export default async function HomePage() {
           fallbackOrigin={emergencyFallbackOrigin}
         />
       </section>
-    </div>
+      </div>
+    </EmergencyStationProvider>
   );
 }
 
