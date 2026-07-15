@@ -1,5 +1,14 @@
 import { appConfig } from "@/src/lib/config";
-import type { DirectionsRequest, DirectionsResult, Station } from "@/src/types";
+import type {
+  DirectionsRequest,
+  DirectionsResult,
+  LatLngLiteral,
+  NearbyFoodAndCoffee,
+  NearbyFoodPlace,
+  Station,
+  StationAmenitiesData,
+} from "@/src/types";
+import { calculateDistanceKm } from "@/src/utils/distance";
 import { isLikelyChargingStation } from "@/src/utils/station-quality";
 
 type GooglePlace = {
@@ -34,6 +43,44 @@ type DirectionsResponse = {
   }>;
   status?: string;
   error_message?: string;
+};
+
+type GooglePlaceAmenities = {
+  currentOpeningHours?: {
+    openNow?: boolean;
+    weekdayDescriptions?: string[];
+  };
+  restroom?: boolean;
+  parkingOptions?: Record<string, boolean>;
+  servesCoffee?: boolean;
+  dineIn?: boolean;
+  servesBreakfast?: boolean;
+  servesLunch?: boolean;
+  servesDinner?: boolean;
+  servesBrunch?: boolean;
+  types?: string[];
+  photos?: Array<{
+    name?: string;
+    authorAttributions?: Array<{
+      displayName?: string;
+      uri?: string;
+    }>;
+  }>;
+};
+
+type GoogleNearbyPlace = {
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  location?: {
+    latitude?: number;
+    longitude?: number;
+  };
+  primaryType?: string;
+  types?: string[];
+};
+
+type GoogleNearbyResponse = {
+  places?: GoogleNearbyPlace[];
 };
 
 function requireGoogleKey() {
@@ -130,6 +177,145 @@ export class GoogleService {
     return normalizePlace(data.result);
   }
 
+  async getPlaceAmenities(placeId: string): Promise<StationAmenitiesData> {
+    const key = requireGoogleKey();
+    const url = new URL(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId.replace(/^google-/, ""))}`);
+    url.searchParams.set("languageCode", "en");
+    url.searchParams.set("regionCode", "PK");
+    const response = await fetch(url, {
+      headers: {
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": [
+          "currentOpeningHours",
+          "restroom",
+          "parkingOptions",
+          "servesCoffee",
+          "dineIn",
+          "servesBreakfast",
+          "servesLunch",
+          "servesDinner",
+          "servesBrunch",
+          "types",
+          "photos",
+        ].join(","),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("Google Places amenities are unavailable.");
+    }
+
+    const data = await response.json() as GooglePlaceAmenities;
+    const restaurantSignals = [
+      data.dineIn,
+      data.servesBreakfast,
+      data.servesLunch,
+      data.servesDinner,
+      data.servesBrunch,
+    ];
+    const hasRestaurantType = data.types?.some((type) => ["restaurant", "meal_takeaway", "meal_delivery"].includes(type));
+    const restaurant = hasRestaurantType || restaurantSignals.some((value) => value === true)
+      ? true
+      : restaurantSignals.some((value) => typeof value === "boolean")
+        ? false
+        : null;
+    const parkingValues = data.parkingOptions ? Object.values(data.parkingOptions) : null;
+    const weekday = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      timeZone: "Asia/Karachi",
+    }).format(new Date());
+    const todayHours = data.currentOpeningHours?.weekdayDescriptions
+      ?.find((description) => description.toLowerCase().startsWith(weekday.toLowerCase()))
+      ?.replace(/^[^:]+:\s*/, "") || null;
+
+    return {
+      openNow: booleanOrNull(data.currentOpeningHours?.openNow),
+      todayHours,
+      restroom: booleanOrNull(data.restroom),
+      restaurant,
+      prayerArea: null,
+      servesCoffee: booleanOrNull(data.servesCoffee),
+      security: null,
+      parking: parkingValues ? parkingValues.some(Boolean) : null,
+      photoCount: data.photos?.length ?? 0,
+      photos: (data.photos || []).slice(0, 6).map((photo) => ({
+        attributionName: photo.authorAttributions?.[0]?.displayName || null,
+        attributionUri: photo.authorAttributions?.[0]?.uri || null,
+      })),
+    };
+  }
+
+  async searchNearbyFoodAndCoffee(origin: LatLngLiteral): Promise<NearbyFoodAndCoffee> {
+    const key = requireGoogleKey();
+    const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location,places.primaryType,places.types",
+      },
+      body: JSON.stringify({
+        includedTypes: ["restaurant", "cafe", "coffee_shop"],
+        maxResultCount: 20,
+        rankPreference: "DISTANCE",
+        languageCode: "en",
+        regionCode: "PK",
+        locationRestriction: {
+          circle: {
+            center: {
+              latitude: origin.lat,
+              longitude: origin.lng,
+            },
+            radius: 1000,
+          },
+        },
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("Nearby food and coffee places are unavailable.");
+    }
+
+    const data = await response.json() as GoogleNearbyResponse;
+    const coffee: NearbyFoodPlace[] = [];
+    const restaurants: NearbyFoodPlace[] = [];
+
+    for (const place of data.places || []) {
+      const latitude = place.location?.latitude;
+      const longitude = place.location?.longitude;
+      const name = place.displayName?.text?.trim();
+
+      if (!name || typeof latitude !== "number" || typeof longitude !== "number") {
+        continue;
+      }
+
+      const distanceKm = calculateDistanceKm(origin, { lat: latitude, lng: longitude });
+
+      if (distanceKm > 1) {
+        continue;
+      }
+
+      const summary: NearbyFoodPlace = {
+        name,
+        address: place.formattedAddress || null,
+        distanceKm,
+      };
+      const types = new Set([place.primaryType, ...(place.types || [])].filter(Boolean));
+      const isCoffee = types.has("cafe") || types.has("coffee_shop");
+      const isRestaurant = [...types].some((type) => type === "restaurant" || type?.endsWith("_restaurant"));
+
+      if (isCoffee && coffee.length < 8) {
+        coffee.push(summary);
+      } else if (isRestaurant && restaurants.length < 8) {
+        restaurants.push(summary);
+      }
+    }
+
+    return { coffee, restaurants };
+  }
+
   async getDirections(input: DirectionsRequest): Promise<DirectionsResult> {
     const key = requireGoogleKey();
     const url = new URL(appConfig.google.directionsApiUrl);
@@ -162,4 +348,8 @@ function isLikelyGoogleChargingPlace(place: GooglePlace) {
     address: place.formatted_address || null,
     operator: null,
   });
+}
+
+function booleanOrNull(value: boolean | undefined) {
+  return typeof value === "boolean" ? value : null;
 }

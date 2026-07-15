@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
 import { useEmergencyStationData } from "@/src/components/station/EmergencyStationProvider";
+import { StationComingSoonSpecs } from "@/src/components/station/StationComingSoonSpecs";
 import { ROUTES } from "@/src/lib/constants";
 import { formatDistance } from "@/src/utils/distance";
 import { googleMapsDirectionsUrl } from "@/src/utils/station";
@@ -65,7 +66,7 @@ export function ClosestStationPanel({
         />
       ) : null}
 
-      {showDetails && !showMap && isLoading ? <LocationLoading /> : null}
+      {showDetails && isLoading ? <LocationLoading /> : null}
 
       {showDetails && !isLoading && closest ? (
         <div className="rounded-2xl border border-border bg-secondary p-4 sm:p-5">
@@ -92,6 +93,7 @@ export function ClosestStationPanel({
             <ClosestMetric label="Distance" value={formatDistance(closest.directDistanceKm)} />
             <ClosestMetric label="Time" value={directions.durationText} />
           </div>
+          <StationComingSoonSpecs className="mt-2" />
           <p className="mt-3 flex items-center gap-2 text-xs text-muted">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
             {locationLabel}
@@ -129,17 +131,45 @@ export function ClosestStationPanel({
 }
 
 function LocationLoading({ className = "", map = false }: { className?: string; map?: boolean }) {
+  if (map) {
+    return (
+      <div
+        className={`min-h-[17rem] h-full animate-pulse bg-surface-strong sm:min-h-96 ${className}`}
+        role="status"
+        aria-live="polite"
+      >
+        <span className="sr-only">Finding the closest charger near you.</span>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={map
-        ? `grid min-h-[17rem] h-full place-items-center bg-background sm:min-h-96 ${className}`
-        : "flex min-h-28 items-center justify-center rounded-2xl border border-border bg-secondary p-4"}
+      className="animate-pulse rounded-2xl border border-border bg-secondary p-4 sm:p-5"
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-center gap-3 text-sm font-semibold text-muted">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-border border-t-primary" aria-hidden="true" />
-        Finding the closest charger near you…
+      <span className="sr-only">Finding the closest charger near you.</span>
+      <div className="flex items-start gap-3" aria-hidden="true">
+        <div className="h-11 w-11 shrink-0 rounded-xl bg-surface-strong" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-3 w-28 rounded bg-surface-strong" />
+          <div className="h-5 w-3/4 rounded bg-surface-strong" />
+        </div>
+      </div>
+      <div className="mt-3 space-y-2" aria-hidden="true">
+        <div className="h-3 w-full rounded bg-surface-strong" />
+        <div className="h-3 w-2/3 rounded bg-surface-strong" />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2" aria-hidden="true">
+        <div className="h-[3.75rem] rounded-xl bg-surface-strong" />
+        <div className="h-[3.75rem] rounded-xl bg-surface-strong" />
+      </div>
+      <div className="mt-2 h-[3.75rem] rounded-xl bg-surface-strong" aria-hidden="true" />
+      <div className="mt-3 h-3 w-40 rounded bg-surface-strong" aria-hidden="true" />
+      <div className="mt-4 flex gap-2" aria-hidden="true">
+        <div className="h-12 flex-1 rounded-xl bg-surface-strong" />
+        <div className="h-12 w-12 shrink-0 rounded-xl bg-surface-strong" />
       </div>
     </div>
   );

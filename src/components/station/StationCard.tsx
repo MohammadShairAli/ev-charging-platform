@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Star } from "@/src/components/ui/Star";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
+import { StationComingSoonSpecs } from "@/src/components/station/StationComingSoonSpecs";
 import { ROUTES } from "@/src/lib/constants";
 import type { Station } from "@/src/types";
 import { formatDistance } from "@/src/utils/distance";
@@ -45,6 +46,8 @@ export function StationCard({ station, showPlaceImage = false, showMapButton = f
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{station.address || "Address unavailable"}</p>
         </div>
       </div>
+
+      <StationComingSoonSpecs className="mt-4" />
 
       <div className="mt-4 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-muted">

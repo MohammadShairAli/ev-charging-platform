@@ -35,8 +35,13 @@ export function StationList({
   const resolvedOrigin = useNearbyApi && emergencyData ? emergencyData.origin : origin;
   const resolvedNearbyStations = useNearbyApi && emergencyData ? emergencyData.nearbyStations : nearbyStations;
   const resolvedNearbyStatus = useNearbyApi && emergencyData ? emergencyData.nearbyStatus : nearbyStatus;
+  const closestStation = useNearbyApi ? emergencyData?.closest?.station : undefined;
   const stationsWithDistance = useMemo(() => {
     let sortedStations = useNearbyApi ? resolvedNearbyStations || [] : stations;
+
+    if (closestStation) {
+      sortedStations = sortedStations.filter((station) => !isSameStation(station, closestStation));
+    }
 
     if (!resolvedOrigin) {
       return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
@@ -56,7 +61,7 @@ export function StationList({
     }).sort((first, second) => (first.distanceKm ?? Number.POSITIVE_INFINITY) - (second.distanceKm ?? Number.POSITIVE_INFINITY));
 
     return typeof limit === "number" ? sortedStations.slice(0, limit) : sortedStations;
-  }, [limit, resolvedNearbyStations, resolvedOrigin, stations, useNearbyApi]);
+  }, [closestStation, limit, resolvedNearbyStations, resolvedOrigin, stations, useNearbyApi]);
 
   useEffect(() => {
     if (emergencyData) {
@@ -150,6 +155,14 @@ export function StationList({
   );
 }
 
+function isSameStation(first: Station, second: Station) {
+  return first.id === second.id || Boolean(
+    first.google_place_id &&
+    second.google_place_id &&
+    first.google_place_id === second.google_place_id
+  );
+}
+
 function StationListSkeleton({ count, dimmed = false }: { count: number; dimmed?: boolean }) {
   return (
     <div className={`grid gap-4 sm:gap-5 ${dimmed ? "opacity-70" : ""}`} aria-hidden="true">
@@ -163,6 +176,7 @@ function StationListSkeleton({ count, dimmed = false }: { count: number; dimmed?
               <div className="h-3 w-2/3 animate-pulse rounded bg-surface-strong" />
             </div>
           </div>
+          <div className="mt-4 h-[3.75rem] animate-pulse rounded-xl bg-surface-strong" aria-hidden="true" />
           <div className="mt-4 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-4">
               <div className="h-4 w-16 animate-pulse rounded bg-surface-strong" />

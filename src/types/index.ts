@@ -19,6 +19,33 @@ export type Station = {
   distanceKm?: number;
 };
 
+export type StationAmenitiesData = {
+  openNow: boolean | null;
+  todayHours: string | null;
+  restroom: boolean | null;
+  restaurant: boolean | null;
+  prayerArea: boolean | null;
+  servesCoffee: boolean | null;
+  security: boolean | null;
+  parking: boolean | null;
+  photoCount: number | null;
+  photos: Array<{
+    attributionName: string | null;
+    attributionUri: string | null;
+  }>;
+};
+
+export type NearbyFoodPlace = {
+  name: string;
+  address: string | null;
+  distanceKm: number;
+};
+
+export type NearbyFoodAndCoffee = {
+  coffee: NearbyFoodPlace[];
+  restaurants: NearbyFoodPlace[];
+};
+
 export type StationSort = "name" | "rating" | "distance";
 
 export type StationFilters = {

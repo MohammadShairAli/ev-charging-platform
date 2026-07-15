@@ -35,6 +35,11 @@ const secondaryLinks = [
   { href: ROUTES.planTrip, label: "Plan trip", icon: "route" },
 ] as const;
 
+const upcomingLinks = [
+  { label: "EV Community", icon: "groups" },
+  { label: "News & Alerts", icon: "campaign" },
+] as const;
+
 export function SidebarNavigation() {
   const [open, setOpen] = useState(false);
   const [auth, setAuth] = useState<StoredAuth | null>(null);
@@ -105,6 +110,7 @@ export function SidebarNavigation() {
             <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Sidebar navigation">
               <SidebarGroup title="Your tools" links={primaryLinks} pathname={pathname} onNavigate={close} />
               <SidebarGroup title="Driving support" links={secondaryLinks} pathname={pathname} onNavigate={close} />
+              <SidebarUpcomingGroup />
             </nav>
             <div className="border-t border-border p-3">
               <LogoutButton onLogout={close} />
@@ -113,6 +119,31 @@ export function SidebarNavigation() {
         </div>
       ) : null}
     </>
+  );
+}
+
+function SidebarUpcomingGroup() {
+  return (
+    <div className="mb-5">
+      <p className="px-3 text-xs font-semibold uppercase tracking-wide text-muted">Coming next</p>
+      <div className="mt-2 grid gap-1">
+        {upcomingLinks.map((link) => (
+          <div
+            key={link.label}
+            className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-muted"
+            aria-disabled="true"
+          >
+            <span className="material-symbols-outlined text-[1.25rem] text-primary" aria-hidden="true">
+              {link.icon}
+            </span>
+            <span>{link.label}</span>
+            <span className="ml-auto shrink-0 rounded-full bg-accent-soft px-2 py-1 text-[0.6rem] font-bold uppercase tracking-wide text-primary">
+              Coming soon
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
