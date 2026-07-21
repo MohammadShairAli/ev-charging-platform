@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LogoutButton } from "@/src/components/auth/LogoutButton";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { AUTH_STORAGE_KEY, ROUTES } from "@/src/lib/constants";
 
 type StoredAuth = {
@@ -54,7 +55,7 @@ export function ProfilePanel() {
       <div className="rounded-lg border border-border bg-surface p-5">
         <div className="flex items-start gap-4">
           <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full border border-border bg-background">
-            <span className="material-symbols-outlined text-primary" aria-hidden="true">person_add</span>
+            <AppIcon name="person_add" className="h-6 w-6 text-primary" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-primary">Guest mode</p>
@@ -173,9 +174,7 @@ function ReadOnlyProfileDetails({ auth, onEdit }: { auth: StoredAuth; onEdit: ()
           aria-label="Edit profile"
           className="grid h-10 w-10 place-items-center rounded-full border border-border bg-secondary text-primary transition hover:border-primary"
         >
-          <span className="material-symbols-outlined text-[1.2rem]" aria-hidden="true">
-            edit
-          </span>
+          <AppIcon name="edit" className="h-5 w-5" />
         </button>
       </div>
 
@@ -329,7 +328,7 @@ function EditableProfileForm({
                 htmlFor="profile-image"
                 className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-secondary transition hover:bg-primary-hover"
               >
-                <span className="material-symbols-outlined text-[1.15rem]" aria-hidden="true">photo_camera</span>
+                <AppIcon name="photo_camera" className="h-[1.15rem] w-[1.15rem]" />
                 Choose image
               </label>
               {image ? (
@@ -341,7 +340,7 @@ function EditableProfileForm({
                   }}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
                 >
-                  <span className="material-symbols-outlined text-[1.15rem]" aria-hidden="true">close</span>
+                  <AppIcon name="close" className="h-[1.15rem] w-[1.15rem]" />
                   Remove selection
                 </button>
               ) : null}

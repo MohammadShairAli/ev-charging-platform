@@ -1,6 +1,7 @@
 "use client";
 
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 
 export type PlannerVehicle = {
   id: string;
@@ -156,9 +157,7 @@ export function VehicleSelector({ value, onValueChange, onSelect }: VehicleSelec
     <div>
       <label htmlFor="trip-vehicle" className="text-sm font-semibold text-foreground">Your car</label>
       <div className="relative mt-2">
-        <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[1.2rem] text-muted" aria-hidden="true">
-          directions_car
-        </span>
+        <AppIcon name="directions_car" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
         <input
           id="trip-vehicle"
           type="search"

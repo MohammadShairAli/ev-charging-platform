@@ -32,12 +32,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} style={themeStyle}>
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-        />
-      </head>
       <body className="flex min-h-screen flex-col overflow-x-hidden pb-24 sm:pb-0">
         <AppChrome>{children}</AppChrome>
       </body>

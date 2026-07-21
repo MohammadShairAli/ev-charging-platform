@@ -7,7 +7,7 @@ import { ROUTES } from "@/src/lib/constants";
 const tabs = [
   {
     href: ROUTES.home,
-    label: "Emergency",
+    label: "Home",
     icon: (
       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
         <path d="M4 10.7 12 4l8 6.7V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.3Z" strokeLinejoin="round" />

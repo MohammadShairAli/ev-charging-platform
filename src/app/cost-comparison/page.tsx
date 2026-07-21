@@ -1,13 +1,11 @@
 import { CostComparisonCalculator } from "@/src/components/cost/CostComparisonCalculator";
 import { parseCostInputs } from "@/src/components/cost/costComparisonUtils";
-import { requireSessionAccess } from "@/src/lib/auth-guard";
 
 type CostComparisonPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function CostComparisonPage({ searchParams }: CostComparisonPageProps) {
-  await requireSessionAccess();
   const inputs = parseCostInputs(await searchParams);
 
   return (

@@ -1,11 +1,9 @@
 import { VehicleDatabase } from "@/src/components/vehicle/VehicleDatabase";
-import { requireSessionAccess } from "@/src/lib/auth-guard";
 import { getVehiclePage } from "@/src/services/vehicles.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function EvDatabasePage() {
-  await requireSessionAccess();
   const initialData = await getVehiclePage();
 
   return (

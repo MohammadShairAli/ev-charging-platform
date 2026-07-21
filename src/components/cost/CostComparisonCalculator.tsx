@@ -9,6 +9,7 @@ import {
   costComparisonQuery,
   defaultCostInputs,
 } from "@/src/components/cost/costComparisonUtils";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { ROUTES } from "@/src/lib/constants";
 
 type VehicleId = "petrol" | "hybrid" | "phev" | "reev" | "ev";
@@ -379,9 +380,7 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
             className="cursor-pointer inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-secondary transition hover:bg-primary-hover sm:w-auto"
           >
             Compare costs
-            <span className="material-symbols-outlined text-[1.2rem]" aria-hidden="true">
-              arrow_forward
-            </span>
+            <AppIcon name="arrow_forward" className="h-[1.2rem] w-[1.2rem]" />
           </button>
         </div>
       </section>
@@ -447,9 +446,7 @@ export function CostComparisonResults({ inputs }: { inputs: CalculatorInputs }) 
                 <summary className="grid cursor-pointer grid-cols-[1fr_8rem] gap-3 px-4 py-4 transition hover:bg-background sm:grid-cols-[1fr_9rem_8rem]">
                   <span className="flex min-w-0 items-center gap-3">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-accent-soft text-primary">
-                      <span className="material-symbols-outlined" aria-hidden="true">
-                        {cost.icon}
-                      </span>
+                      <AppIcon name={cost.icon} className="h-5 w-5" />
                     </span>
                     <span className="min-w-0">
                       <span className="block font-bold text-foreground">{cost.label}</span>
@@ -515,9 +512,7 @@ function AssumptionDropdown({
       >
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-full bg-surface text-primary">
-            <span className="material-symbols-outlined text-[1.1rem]">
-              {icon}
-            </span>
+            <AppIcon name={icon} className="h-[1.1rem] w-[1.1rem]" />
           </span>
 
           <span className="text-sm font-bold text-foreground">
@@ -525,12 +520,10 @@ function AssumptionDropdown({
           </span>
         </div>
 
-        <span
-          className={`material-symbols-outlined transition-transform duration-200 ${isOpen ? "rotate-180" : ""
-            }`}
-        >
-          expand_more
-        </span>
+        <AppIcon
+          name="expand_more"
+          className={`h-5 w-5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       <div
@@ -562,7 +555,7 @@ function AssumptionControl({
     <label className={`grid gap-2 rounded-xl border border-border bg-background p-3 ${compact ? "" : "lg:min-h-36"}`}>
       <span className="flex items-center gap-2">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface text-primary" aria-hidden="true">
-          <span className="material-symbols-outlined text-[1.1rem]">{field.icon}</span>
+          <AppIcon name={field.icon} className="h-[1.1rem] w-[1.1rem]" />
         </span>
         <span className="min-w-0 text-sm font-bold leading-5 text-foreground">{field.label}</span>
       </span>

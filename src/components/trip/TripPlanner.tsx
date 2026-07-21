@@ -8,6 +8,7 @@ import {
   vehicleLabel,
 } from "@/src/components/trip/VehicleSelector";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { appConfig } from "@/src/lib/config";
 import {
   PROFILE_STORAGE_KEY,
@@ -1284,9 +1285,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                   aria-label={editingRange ? "Finish editing car range" : "Edit car range"}
                   className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-secondary text-primary transition hover:border-primary"
                 >
-                  <span className="material-symbols-outlined text-[1.2rem]" aria-hidden="true">
-                    {editingRange ? "check" : "edit"}
-                  </span>
+                  <AppIcon name={editingRange ? "check" : "edit"} className="h-[1.2rem] w-[1.2rem]" />
                 </button>
               </div>
               {editingRange ? (
@@ -1395,8 +1394,8 @@ function TripDesktopPreview({
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Trip readiness</p>
             <h2 className="mt-2 text-2xl font-bold text-foreground">Your EV at a glance</h2>
           </div>
-          <span className="material-symbols-outlined grid h-12 w-12 place-items-center rounded-full bg-primary text-[1.5rem] text-secondary" aria-hidden="true">
-            route
+          <span className="grid h-12 w-12 place-items-center rounded-full bg-primary text-secondary">
+            <AppIcon name="route" className="h-6 w-6" />
           </span>
         </div>
         <p className="mt-3 text-sm leading-6 text-muted">
@@ -1444,7 +1443,7 @@ function TripDesktopPreview({
 
         <div className="rounded-xl bg-primary p-4 text-secondary">
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-[1.35rem]" aria-hidden="true">shield</span>
+            <AppIcon name="shield" className="h-[1.35rem] w-[1.35rem]" />
             <div>
               <p className="text-sm font-bold">{ARRIVAL_RESERVE_PERCENT}% arrival reserve</p>
               <p className="mt-0.5 text-xs leading-5 text-secondary/75">
@@ -1472,8 +1471,8 @@ function DesktopPreviewStep({
   return (
     <li className="grid grid-cols-[2.5rem_1fr] gap-x-3">
       <div className="flex flex-col items-center">
-        <span className="material-symbols-outlined grid h-9 w-9 place-items-center rounded-full border border-primary/30 bg-secondary text-[1.1rem] text-primary" aria-hidden="true">
-          {icon}
+        <span className="grid h-9 w-9 place-items-center rounded-full border border-primary/30 bg-secondary text-primary">
+          <AppIcon name={icon} className="h-[1.1rem] w-[1.1rem]" />
         </span>
         {!last ? <span className="min-h-8 w-px flex-1 bg-border" aria-hidden="true" /> : null}
       </div>

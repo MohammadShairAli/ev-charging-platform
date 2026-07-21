@@ -1,4 +1,5 @@
 import type { NearbyFoodAndCoffee, NearbyFoodPlace } from "@/src/types";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 
 type NearbyFoodPlacesProps = {
   places: NearbyFoodAndCoffee;
@@ -48,7 +49,7 @@ function NearbyPlaceCard({
         <div className="min-w-0 flex-1">
           <p className="line-clamp-1 text-sm font-semibold leading-5 text-foreground">{place.name}</p>
           <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-primary">
-            <span className="material-symbols-outlined text-base" aria-hidden="true">{place.icon}</span>
+            <AppIcon name={place.icon} className="h-4 w-4" />
             <span>{place.category}</span>
           </div>
           {place.address ? <p className="mt-1 line-clamp-1 text-xs leading-5 text-muted">{place.address}</p> : null}
@@ -64,7 +65,7 @@ function NearbyPlaceCard({
             aria-label={`Open directions to ${place.name} in Google Maps`}
             className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
           >
-            <span className="material-symbols-outlined" aria-hidden="true">near_me</span>
+            <AppIcon name="near_me" className="h-5 w-5" />
           </a>
         </div>
       </div>

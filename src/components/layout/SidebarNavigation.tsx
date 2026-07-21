@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogoutButton } from "@/src/components/auth/LogoutButton";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { appConfig } from "@/src/lib/config";
 import { AUTH_STORAGE_KEY, ROUTES } from "@/src/lib/constants";
 
@@ -30,7 +31,8 @@ const primaryLinks = [
 ] as const;
 
 const secondaryLinks = [
-  { href: ROUTES.home, label: "Emergency dashboard", icon: "emergency" },
+  { href: ROUTES.home, label: "Home", icon: "home" },
+  { href: ROUTES.emergency, label: "Emergency dashboard", icon: "emergency" },
   { href: ROUTES.stations, label: "Charging stations", icon: "ev_station" },
   { href: ROUTES.planTrip, label: "Plan trip", icon: "route" },
 ] as const;
@@ -74,9 +76,7 @@ export function SidebarNavigation() {
         aria-label="Open menu"
         className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-surface-strong text-primary transition hover:border-primary"
       >
-        <span className="material-symbols-outlined text-[1.35rem]" aria-hidden="true">
-          menu
-        </span>
+        <AppIcon name="menu" className="h-[1.35rem] w-[1.35rem]" />
       </button>
 
       {open ? (
@@ -99,9 +99,7 @@ export function SidebarNavigation() {
                 aria-label="Close menu"
                 className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface text-muted transition hover:border-primary hover:text-primary"
               >
-                <span className="material-symbols-outlined text-[1.25rem]" aria-hidden="true">
-                  close
-                </span>
+                <AppIcon name="close" className="h-5 w-5" />
               </button>
             </div>
 
@@ -133,9 +131,7 @@ function SidebarUpcomingGroup() {
             className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-muted"
             aria-disabled="true"
           >
-            <span className="material-symbols-outlined text-[1.25rem] text-primary" aria-hidden="true">
-              {link.icon}
-            </span>
+            <AppIcon name={link.icon} className="h-5 w-5 text-primary" />
             <span>{link.label}</span>
             <span className="ml-auto shrink-0 rounded-full bg-accent-soft px-2 py-1 text-[0.6rem] font-bold uppercase tracking-wide text-primary">
               Coming soon
@@ -175,9 +171,7 @@ function SidebarProfile({ auth, onNavigate }: { auth: StoredAuth | null; onNavig
         <span className="block truncate text-sm font-bold text-foreground">{title}</span>
         <span className="mt-0.5 block truncate text-xs text-muted">{subtitle}</span>
       </span>
-      <span className="material-symbols-outlined ml-auto shrink-0 text-[1.2rem] text-muted" aria-hidden="true">
-        chevron_right
-      </span>
+      <AppIcon name="chevron_right" className="ml-auto h-[1.2rem] w-[1.2rem] shrink-0 text-muted" />
     </Link>
   );
 }
@@ -239,9 +233,7 @@ function SidebarGroup({
                 active ? "bg-primary text-secondary" : "text-foreground hover:bg-surface-strong hover:text-primary"
               }`}
             >
-              <span className="material-symbols-outlined text-[1.25rem]" aria-hidden="true">
-                {link.icon}
-              </span>
+              <AppIcon name={link.icon} className="h-5 w-5" />
               <span>{link.label}</span>
             </Link>
           );

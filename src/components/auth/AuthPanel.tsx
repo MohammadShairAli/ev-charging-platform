@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { AUTH_COOKIE_NAME, AUTH_STORAGE_KEY, LEGACY_AUTH_COOKIE_NAME, ROUTES } from "@/src/lib/constants";
 
 type Mode = "login" | "signup";
@@ -148,7 +149,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
             className="w-full max-w-sm rounded-lg border border-border bg-surface p-5 text-center shadow-xl"
           >
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary text-secondary">
-              <span className="material-symbols-outlined" aria-hidden="true">mark_email_read</span>
+              <AppIcon name="mark_email_read" className="h-6 w-6" />
             </div>
             <h2 className="mt-4 text-xl font-bold text-foreground">Verification email sent</h2>
             <p className="mt-2 text-sm leading-6 text-muted">

@@ -1,5 +1,6 @@
 import type { StationAmenitiesData } from "@/src/types";
 import { StationPhotoGallery } from "@/src/components/station/StationPhotoGallery";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 
 type Facility = {
   label: string;
@@ -68,7 +69,7 @@ function OpeningHoursCard({ openNow, todayHours }: { openNow: boolean | null; to
   return (
     <div className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-accent-soft p-4">
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-secondary text-primary" aria-hidden="true">
-        <span className="material-symbols-outlined">schedule</span>
+        <AppIcon name="schedule" className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Today&apos;s opening hours</p>
@@ -87,9 +88,7 @@ function FacilityList({ facilities }: { facilities: Facility[] }) {
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {facilities.map((facility) => (
           <li key={facility.label} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border bg-background p-2.5">
-            <span className={`material-symbols-outlined text-lg ${facility.value === true ? "text-primary" : "text-muted"}`} aria-hidden="true">
-              {facility.icon}
-            </span>
+            <AppIcon name={facility.icon} className={`h-[1.125rem] w-[1.125rem] ${facility.value === true ? "text-primary" : "text-muted"}`} />
             <span className="min-w-0">
               <span className="block truncate text-[0.7rem] font-bold leading-4 text-foreground">{facility.label}</span>
               <FacilityStatus value={facility.value} />

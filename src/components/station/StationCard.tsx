@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Star } from "@/src/components/ui/Star";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { StationComingSoonSpecs } from "@/src/components/station/StationComingSoonSpecs";
 import { ROUTES } from "@/src/lib/constants";
 import type { Station } from "@/src/types";
@@ -68,9 +69,7 @@ export function StationCard({ station, showPlaceImage = false, showMapButton = f
               aria-label={`Open ${station.name} in Google Maps`}
               className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
             >
-              <span className="material-symbols-outlined">
-                near_me
-              </span>
+              <AppIcon name="near_me" className="h-5 w-5" />
             </a>
           ) : null}
         </div>

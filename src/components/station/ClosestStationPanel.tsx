@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { useEmergencyStationData } from "@/src/components/station/EmergencyStationProvider";
 import { StationComingSoonSpecs } from "@/src/components/station/StationComingSoonSpecs";
 import { ROUTES } from "@/src/lib/constants";
@@ -114,9 +115,7 @@ export function ClosestStationPanel({
                 aria-label={`Open ${closest.station.name} in Google Maps`}
                 className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
               >
-                <span className="material-symbols-outlined">
-                  near_me
-                </span>
+                <AppIcon name="near_me" className="h-5 w-5" />
               </a>
             ) : null}
           </div>

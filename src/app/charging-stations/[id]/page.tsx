@@ -1,11 +1,11 @@
 import Link from "next/link";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { notFound } from "next/navigation";
 import { StationAmenities, StationPhotos } from "@/src/components/station/StationAmenities";
 import { StationComingSoonSpecs } from "@/src/components/station/StationComingSoonSpecs";
 import { NearbyFoodPlaces } from "@/src/components/station/NearbyFoodPlaces";
 import { StationRouteMap } from "@/src/components/station/StationRouteMap";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
-import { requireSessionAccess } from "@/src/lib/auth-guard";
 import { appConfig } from "@/src/lib/config";
 import { ROUTES } from "@/src/lib/constants";
 import { googleService } from "@/src/services/google.service";
@@ -19,7 +19,6 @@ type StationDetailsPageProps = {
 };
 
 export default async function StationDetailsPage({ params }: StationDetailsPageProps) {
-  await requireSessionAccess();
   const { id } = await params;
   const station = await stationsService.findById(id);
 
@@ -44,7 +43,7 @@ export default async function StationDetailsPage({ params }: StationDetailsPageP
         href={ROUTES.stations}
         className="inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-primary"
       >
-        <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
+        <AppIcon name="arrow_back" className="h-[1.125rem] w-[1.125rem]" />
         Back to charging stations
       </Link>
 

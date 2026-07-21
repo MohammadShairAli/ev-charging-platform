@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import type { StationAmenitiesData } from "@/src/types";
 
 export function StationPhotoGallery({
@@ -33,7 +34,7 @@ export function StationPhotoGallery({
             aria-label="Show previous station photos"
             className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-primary hover:text-primary"
           >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
+            <AppIcon name="arrow_back" className="h-[1.125rem] w-[1.125rem]" />
           </button>
           <button
             type="button"
@@ -41,7 +42,7 @@ export function StationPhotoGallery({
             aria-label="Show next station photos"
             className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-primary hover:text-primary"
           >
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span>
+            <AppIcon name="arrow_forward" className="h-[1.125rem] w-[1.125rem]" />
           </button>
         </div>
       </div>

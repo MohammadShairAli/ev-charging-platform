@@ -24,6 +24,9 @@ export function Navbar() {
         </Link>
         <nav className="hidden shrink-0 items-center justify-center gap-1 rounded-full border border-border bg-surface-strong/70 p-1 text-sm font-semibold sm:flex">
           <Link href={ROUTES.home} className="rounded-full px-2.5 py-2 transition hover:bg-secondary hover:text-primary sm:px-3">
+            Home
+          </Link>
+          <Link href={ROUTES.emergency} className="rounded-full px-2.5 py-2 transition hover:bg-secondary hover:text-primary sm:px-3">
             Emergency
           </Link>
           <Link href={ROUTES.stations} className="rounded-full px-2.5 py-2 transition hover:bg-secondary hover:text-primary sm:px-3">

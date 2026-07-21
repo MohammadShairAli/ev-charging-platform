@@ -2,7 +2,6 @@ import Link from "next/link";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
 import { StationsToolbar } from "@/src/components/station/StationsToolbar";
 import { StationList } from "@/src/components/station/StationList";
-import { requireSessionAccess } from "@/src/lib/auth-guard";
 import { stationsService } from "@/src/services/stations.service";
 import type { LatLngLiteral, StationSort } from "@/src/types";
 
@@ -22,7 +21,6 @@ const validSorts: StationSort[] = ["name", "rating", "distance"];
 const pageSize = 6;
 
 export default async function ChargingStationsPage({ searchParams }: ChargingStationsPageProps) {
-  await requireSessionAccess();
   const params = await searchParams;
   const sort = validSorts.includes(params.sort || "distance") ? params.sort || "distance" : "distance";
   const query = params.q || "";

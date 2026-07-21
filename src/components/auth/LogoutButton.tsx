@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { AppIcon } from "@/src/components/ui/AppIcon";
 import { AUTH_COOKIE_NAME, AUTH_STORAGE_KEY, LEGACY_AUTH_COOKIE_NAME, ROUTES } from "@/src/lib/constants";
 
 export function LogoutButton({ label = "Logout", onLogout }: { label?: string; onLogout?: () => void }) {
@@ -20,9 +21,7 @@ export function LogoutButton({ label = "Logout", onLogout }: { label?: string; o
       onClick={logout}
       className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-foreground transition hover:bg-surface-strong hover:text-primary"
     >
-      <span className="material-symbols-outlined text-[1.25rem]" aria-hidden="true">
-        logout
-      </span>
+      <AppIcon name="logout" className="h-5 w-5" />
       <span>{label}</span>
     </button>
   );
