@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import Link from "next/link";
 import { SearchBar } from "@/src/components/shared/SearchBar";
+import { ClosestStationPanel } from "@/src/components/station/ClosestStationPanel";
+import { EmergencyStationProvider } from "@/src/components/station/EmergencyStationProvider";
 import { StationList } from "@/src/components/station/StationList";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
 import { AppIcon } from "@/src/components/ui/AppIcon";
+import { appConfig } from "@/src/lib/config";
 import { ROUTES } from "@/src/lib/constants";
 import { stationsService } from "@/src/services/stations.service";
 
@@ -38,11 +40,13 @@ const platformTools = [
 
 export default async function HomePage() {
   const stations = await stationsService.list() ?? [];
+  const fallbackOrigin = appConfig.google.lahoreGulbergCenter;
 
   return (
+    <EmergencyStationProvider stations={stations} fallbackOrigin={fallbackOrigin}>
     <main>
       <section className="overflow-hidden border-b border-border bg-surface">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12 lg:px-8 lg:py-20">
+        <div className="mx-auto grid max-w-7xl items-start gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12 lg:px-8 lg:py-20">
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-primary">
               <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
@@ -71,25 +75,23 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative min-h-[20rem] overflow-hidden rounded-[2rem] border border-border bg-background shadow-sm sm:min-h-[28rem] lg:min-h-[34rem]">
-            <Image
-              src="/ev-hero.png"
-              alt="Electric car connected to a charging station with a route map in the background"
-              fill
-              priority
-              sizes="(min-width: 1024px) 52vw, 100vw"
-              className="object-cover object-center"
-            />
-            <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/50 bg-white/90 p-4 shadow-lg backdrop-blur sm:inset-x-6 sm:bottom-6 sm:p-5">
-              <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-secondary">
-                  <AppIcon name="electric_bolt" className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-foreground">One platform for every EV journey</p>
-                  <p className="mt-1 text-xs leading-5 text-muted">From choosing a car to reaching the next charger.</p>
-                </div>
+          <div className="min-w-0">
+            <div className="sm:hidden">
+              <div className="relative h-[20rem] overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
+                <ClosestStationPanel
+                  mapClassName="h-full min-h-full rounded-none border-0"
+                  showDetails={false}
+                />
               </div>
+              <div className="relative z-10 -mt-8 px-3">
+                <ClosestStationPanel showMap={false} />
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <ClosestStationPanel
+                variant="desktop"
+                mapClassName="min-h-[24rem] lg:min-h-[28rem]"
+              />
             </div>
           </div>
         </div>
@@ -135,10 +137,18 @@ export default async function HomePage() {
             </div>
             <ButtonLink href={ROUTES.stations} variant="secondary">View all stations</ButtonLink>
           </div>
-          <StationList stations={stations} showPlaceImage showMapButton limit={3} />
+          <StationList
+            stations={stations}
+            showPlaceImage
+            showMapButton
+            limit={3}
+            useNearbyApi
+            fallbackOrigin={fallbackOrigin}
+          />
         </div>
       </section>
     </main>
+    </EmergencyStationProvider>
   );
 }
 
