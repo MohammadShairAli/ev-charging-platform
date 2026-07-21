@@ -46,8 +46,20 @@ export default async function HomePage() {
     <EmergencyStationProvider stations={stations} fallbackOrigin={fallbackOrigin}>
     <main>
       <section className="overflow-hidden border-b border-border bg-surface">
+        <div className="bg-background sm:hidden">
+          <div className="relative h-[20rem] overflow-hidden">
+            <ClosestStationPanel
+              mapClassName="h-full min-h-full rounded-none border-0"
+              showDetails={false}
+            />
+          </div>
+          <div className="relative z-10 -mt-8 px-4 pb-2">
+            <ClosestStationPanel showMap={false} />
+          </div>
+        </div>
+
         <div className="mx-auto grid max-w-7xl items-start gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12 lg:px-8 lg:py-20">
-          <div className="relative z-10">
+          <div className="relative z-10 order-2 lg:order-1">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-primary">
               <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
               Pakistan&apos;s EV driving companion
@@ -75,24 +87,11 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="min-w-0">
-            <div className="sm:hidden">
-              <div className="relative h-[20rem] overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-                <ClosestStationPanel
-                  mapClassName="h-full min-h-full rounded-none border-0"
-                  showDetails={false}
-                />
-              </div>
-              <div className="relative z-10 -mt-8 px-3">
-                <ClosestStationPanel showMap={false} />
-              </div>
-            </div>
-            <div className="hidden sm:block">
-              <ClosestStationPanel
-                variant="desktop"
-                mapClassName="min-h-[24rem] lg:min-h-[28rem]"
-              />
-            </div>
+          <div className="order-1 hidden min-w-0 sm:block lg:order-2">
+            <ClosestStationPanel
+              variant="desktop"
+              mapClassName="min-h-[24rem] lg:min-h-[28rem]"
+            />
           </div>
         </div>
       </section>
