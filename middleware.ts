@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, ROUTES } from "@/src/lib/constants";
 
 const publicPrefixes = [
+  ROUTES.home,
   ROUTES.login,
   ROUTES.signup,
   ROUTES.forgotPassword,
