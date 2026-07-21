@@ -10,6 +10,8 @@ export type StoredProfile = {
   car?: {
     make?: string;
     model?: string;
+    variant?: string;
+    kind?: "EV" | "PHEV/REEV";
     rangeKm?: number;
   };
 };

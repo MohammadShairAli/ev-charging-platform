@@ -7,11 +7,11 @@ import { StationList } from "@/src/components/station/StationList";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
 import { appConfig } from "@/src/lib/config";
 import { EMERGENCY_CONTACTS, ROUTES } from "@/src/lib/constants";
-import { requireSessionAccess } from "@/src/lib/auth-guard";
+// import { requireSessionAccess } from "@/src/lib/auth-guard";
 import { stationsService } from "@/src/services/stations.service";
 
 export default async function HomePage() {
-  await requireSessionAccess();
+  // await requireSessionAccess();
   const stations = await stationsService.list() ?? [];
   const emergencyFallbackOrigin = appConfig.google.lahoreGulbergCenter;
 

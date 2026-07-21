@@ -155,10 +155,11 @@ function SidebarProfile({ auth, onNavigate }: { auth: StoredAuth | null; onNavig
   const initial = (metadata?.first_name || fullName || email || "U").trim().charAt(0).toUpperCase() || "U";
   const title = auth?.mode === "guest" ? "Guest mode" : fullName || email || "Your profile";
   const subtitle = auth?.mode === "guest" ? "Sign in to save your account" : email || "Account details";
+  const profileHref = auth?.mode === "auth" ? ROUTES.profile : ROUTES.login;
 
   return (
     <Link
-      href={ROUTES.profile}
+      href={profileHref}
       onClick={onNavigate}
       className="mx-3 mt-3 flex items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:border-primary"
     >

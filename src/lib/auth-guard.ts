@@ -9,3 +9,11 @@ export async function requireSessionAccess() {
     redirect(ROUTES.login);
   }
 }
+
+export async function requireAuthenticatedSession() {
+  const accessMode = (await cookies()).get(AUTH_COOKIE_NAME)?.value;
+
+  if (accessMode !== "auth") {
+    redirect(ROUTES.login);
+  }
+}

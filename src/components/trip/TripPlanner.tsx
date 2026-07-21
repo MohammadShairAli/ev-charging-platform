@@ -1,7 +1,12 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
+import {
+  type PlannerVehicle,
+  VehicleSelector,
+  vehicleLabel,
+} from "@/src/components/trip/VehicleSelector";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
 import { appConfig } from "@/src/lib/config";
 import {
@@ -12,6 +17,12 @@ import {
 } from "@/src/lib/local-storage";
 import type { LatLngLiteral, Station } from "@/src/types";
 import { calculateDistanceKm } from "@/src/utils/distance";
+import {
+  ARRIVAL_RESERVE_PERCENT,
+  chooseChargingStops,
+  chooseRemainingStopsAfter,
+  reachableChargingOptions,
+} from "@/src/utils/trip-range";
 
 type GoogleLatLng = {
   lat: () => number;
@@ -143,6 +154,7 @@ type PlannedStop = {
   station: Station;
   coordinates: LatLngLiteral;
   arrivalLeg: GoogleDirectionsLeg;
+  progressKm: number;
 };
 
 type TripPlan = {
@@ -157,6 +169,9 @@ type TripPlan = {
   reserveRangeKm: number;
   carRangeKm: number;
   currentChargePercent: number;
+  vehicleName: string;
+  baseRouteDistanceKm: number;
+  chargingCandidates: ChargingCandidate[];
 };
 
 type TripPlannerProps = {
@@ -164,7 +179,7 @@ type TripPlannerProps = {
 };
 
 const MAX_CHARGING_STOPS = 8;
-const ARRIVAL_RESERVE_PERCENT = 15;
+const MAX_ROUTE_SEARCH_CHECKPOINTS = 16;
 const TRIP_RESULT_QUERY_KEY = "result";
 const TRIP_RESULT_QUERY_VALUE = "1";
 let mapsLoadingPromise: Promise<TripGoogleMaps> | null = null;
@@ -449,12 +464,12 @@ async function discoverChargingStations(
   carRangeKm: number,
 ) {
   const placesLibrary = await maps.importLibrary("places") as GooglePlaceLibrary;
-  const checkpointGapKm = Math.max(40, carRangeKm * 0.72);
+  const checkpointGapKm = Math.max(40, Math.min(100, carRangeKm * 0.25));
   const checkpoints: LatLngLiteral[] = [];
 
   for (
     let distanceKm = checkpointGapKm;
-    distanceKm < totalDistanceKm && checkpoints.length < MAX_CHARGING_STOPS;
+    distanceKm < totalDistanceKm && checkpoints.length < MAX_ROUTE_SEARCH_CHECKPOINTS;
     distanceKm += checkpointGapKm
   ) {
     checkpoints.push(pointAtRouteDistance(path, cumulativeDistances, totalDistanceKm, distanceKm));
@@ -498,60 +513,6 @@ function buildCandidates(
 
     return candidates;
   }, []);
-}
-
-function chooseChargingStops(
-  candidates: ChargingCandidate[],
-  totalDistanceKm: number,
-  carRangeKm: number,
-  currentChargePercent: number,
-) {
-  const fullChargeDrivingBudgetKm = carRangeKm * ((100 - ARRIVAL_RESERVE_PERCENT) / 100);
-  const stops: ChargingCandidate[] = [];
-  let currentProgressKm = 0;
-  let drivingBudgetKm = carRangeKm * (Math.max(0, currentChargePercent - ARRIVAL_RESERVE_PERCENT) / 100);
-  let planningFirstLeg = true;
-
-  while (totalDistanceKm - currentProgressKm > drivingBudgetKm) {
-    const reachable = candidates
-      .filter((candidate) => (
-        candidate.progressKm > currentProgressKm + 5 &&
-        candidate.progressKm <= currentProgressKm + drivingBudgetKm &&
-        !stops.some((stop) => stop.station.id === candidate.station.id)
-      ))
-      .sort((first, second) => (
-        second.progressKm - first.progressKm || first.corridorKm - second.corridorKm
-      ));
-    let nextStop = reachable[0];
-
-    if (!nextStop && planningFirstLeg) {
-      nextStop = candidates
-        .filter((candidate) => (
-          candidate.progressKm > currentProgressKm + 5 &&
-          candidate.progressKm <= currentProgressKm + fullChargeDrivingBudgetKm
-        ))
-        .sort((first, second) => (
-          first.progressKm - second.progressKm || first.corridorKm - second.corridorKm
-        ))[0];
-    }
-
-    if (!nextStop) {
-      throw new Error(
-        `No charging station was found that keeps at least ${ARRIVAL_RESERVE_PERCENT}% battery on every leg. Try a larger range or a different route.`,
-      );
-    }
-
-    stops.push(nextStop);
-    currentProgressKm = nextStop.progressKm;
-    drivingBudgetKm = fullChargeDrivingBudgetKm;
-    planningFirstLeg = false;
-
-    if (stops.length >= MAX_CHARGING_STOPS && totalDistanceKm - currentProgressKm > drivingBudgetKm) {
-      throw new Error("This trip needs more charging stops than the planner currently supports.");
-    }
-  }
-
-  return stops;
 }
 
 function readStoredProfile() {
@@ -845,10 +806,13 @@ export function TripPlanner({ stations }: TripPlannerProps) {
   const [end, setEnd] = useState("");
   const [startLocation, setStartLocation] = useState<LatLngLiteral | null>(null);
   const [endLocation, setEndLocation] = useState<LatLngLiteral | null>(null);
+  const [vehicleQuery, setVehicleQuery] = useState("");
+  const [selectedVehicle, setSelectedVehicle] = useState<PlannerVehicle | null>(null);
   const [rangeKm, setRangeKm] = useState("");
   const [currentChargePercent, setCurrentChargePercent] = useState("100");
-  const [usingSavedRange, setUsingSavedRange] = useState(false);
+  const [editingRange, setEditingRange] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [changingStopIndex, setChangingStopIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -870,7 +834,18 @@ export function TripPlanner({ stations }: TripPlannerProps) {
 
       if (savedRange && savedRange > 0) {
         setRangeKm(String(savedRange));
-        setUsingSavedRange(true);
+        if (profile.car?.make && profile.car.model) {
+          const savedVehicle: PlannerVehicle = {
+            id: `saved-${profile.car.make}-${profile.car.model}-${profile.car.variant || ""}`,
+            brand: profile.car.make,
+            model: profile.car.model,
+            variant: profile.car.variant || "",
+            kind: profile.car.kind || "EV",
+            rangeKm: savedRange,
+          };
+          setSelectedVehicle(savedVehicle);
+          setVehicleQuery(vehicleLabel(savedVehicle));
+        }
       } else if (draft.rangeKm && draft.rangeKm > 0) {
         setRangeKm(String(draft.rangeKm));
       }
@@ -904,6 +879,87 @@ export function TripPlanner({ stations }: TripPlannerProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function changeChargingStop(index: number, stationId: string) {
+    if (!plan || plan.stops[index]?.station.id === stationId) {
+      return;
+    }
+
+    const candidate = plan.chargingCandidates.find((item) => item.station.id === stationId);
+
+    if (!candidate) {
+      setError("That charging station is no longer available for this route.");
+      return;
+    }
+
+    setChangingStopIndex(index);
+    setError(null);
+
+    try {
+      const maps = await loadGoogleMaps();
+      const prefixStops = plan.stops.slice(0, index);
+      const selectedStationIds = [
+        ...prefixStops.map((stop) => stop.station.id),
+        candidate.station.id,
+      ];
+      const remainingStops = chooseRemainingStopsAfter(
+        plan.chargingCandidates,
+        plan.baseRouteDistanceKm,
+        candidate.progressKm,
+        plan.carRangeKm,
+        MAX_CHARGING_STOPS - prefixStops.length - 1,
+        selectedStationIds,
+      );
+      const nextStops: PlannedStop[] = [
+        ...prefixStops,
+        ...[candidate, ...remainingStops].map((stopCandidate) => ({
+          station: stopCandidate.station,
+          coordinates: stopCandidate.coordinates,
+          arrivalLeg: plan.finalLeg,
+          progressKm: stopCandidate.progressKm,
+        })),
+      ];
+      const result = await computeDirections(maps, {
+        origin: plan.origin,
+        destination: plan.destination,
+        waypoints: nextStops.map((stop) => stop.coordinates),
+      });
+      const route = result.routes?.[0];
+      const legs = route?.legs || [];
+      const routePath = route ? getRoutePath(route) : [];
+
+      if (!route || !routePath.length || legs.length !== nextStops.length + 1) {
+        throw new Error("A route through that charging station could not be built.");
+      }
+
+      const safeLegRangeKm = plan.carRangeKm * ((100 - ARRIVAL_RESERVE_PERCENT) / 100);
+      const firstLegRangeKm = plan.carRangeKm * (
+        Math.max(0, plan.currentChargePercent - ARRIVAL_RESERVE_PERCENT) / 100
+      );
+      const overRangeLeg = legs.find((leg, legIndex) => (
+        legDistanceKm(leg) > (legIndex === 0 ? firstLegRangeKm : safeLegRangeKm)
+      ));
+
+      if (overRangeLeg) {
+        throw new Error(
+          `That choice creates a ${overRangeLeg.distance?.text || "long"} leg and would use the ${ARRIVAL_RESERVE_PERCENT}% safety reserve. Choose another charger.`,
+        );
+      }
+
+      setPlan({
+        ...plan,
+        routePath,
+        stops: nextStops.map((stop, stopIndex) => ({ ...stop, arrivalLeg: legs[stopIndex] })),
+        finalLeg: legs.at(-1)!,
+        totalDistanceKm: routeDistanceKm(legs),
+        totalDurationSeconds: routeDurationSeconds(legs),
+      });
+    } catch (caughtError) {
+      setError(googleApiErrorMessage(caughtError));
+    } finally {
+      setChangingStopIndex(null);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsedRange = Number(rangeKm);
@@ -911,6 +967,11 @@ export function TripPlanner({ stations }: TripPlannerProps) {
 
     if (!start.trim() || !end.trim()) {
       setError("Enter both a starting point and a destination.");
+      return;
+    }
+
+    if (!selectedVehicle) {
+      setError("Search for your car and select the exact model or variant from the list.");
       return;
     }
 
@@ -933,7 +994,14 @@ export function TripPlanner({ stations }: TripPlannerProps) {
       const profile = readStoredProfile();
       const nextProfile: StoredProfile = {
         ...profile,
-        car: { ...profile.car, rangeKm: parsedRange },
+        car: {
+          ...profile.car,
+          make: selectedVehicle.brand,
+          model: selectedVehicle.model,
+          variant: selectedVehicle.variant,
+          kind: selectedVehicle.kind,
+          rangeKm: parsedRange,
+        },
       };
       const draft: StoredTripDraft = {
         start: start.trim(),
@@ -943,7 +1011,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
       };
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(nextProfile));
       localStorage.setItem(TRIP_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-      setUsingSavedRange(true);
+      setEditingRange(false);
 
       if (!appConfig.google.browserMapsApiKey) {
         throw new Error("Add a Google Maps API key before planning a live trip.");
@@ -989,6 +1057,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
         totalDistanceKm,
         parsedRange,
         parsedCurrentCharge,
+        MAX_CHARGING_STOPS,
       );
       const finalResult = stops.length
         ? await computeDirections(maps, {
@@ -1008,7 +1077,12 @@ export function TripPlanner({ stations }: TripPlannerProps) {
       }
 
       const safeLegRangeKm = parsedRange * ((100 - ARRIVAL_RESERVE_PERCENT) / 100);
-      const overRangeLeg = finalLegs.find((leg) => (leg.distance?.value || 0) / 1000 > safeLegRangeKm);
+      const firstLegRangeKm = parsedRange * (
+        Math.max(0, parsedCurrentCharge - ARRIVAL_RESERVE_PERCENT) / 100
+      );
+      const overRangeLeg = finalLegs.find((leg, legIndex) => (
+        legDistanceKm(leg) > (legIndex === 0 ? firstLegRangeKm : safeLegRangeKm)
+      ));
 
       if (overRangeLeg) {
         throw new Error(
@@ -1025,6 +1099,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
           station: stop.station,
           coordinates: stop.coordinates,
           arrivalLeg: finalLegs[index],
+          progressKm: stop.progressKm,
         })),
         finalLeg: finalLegs.at(-1)!,
         totalDistanceKm: routeDistanceKm(finalLegs),
@@ -1032,6 +1107,9 @@ export function TripPlanner({ stations }: TripPlannerProps) {
         reserveRangeKm: parsedRange * (ARRIVAL_RESERVE_PERCENT / 100),
         carRangeKm: parsedRange,
         currentChargePercent: parsedCurrentCharge,
+        vehicleName: vehicleLabel(selectedVehicle),
+        baseRouteDistanceKm: totalDistanceKm,
+        chargingCandidates: candidates,
       });
     } catch (caughtError) {
       setError(googleApiErrorMessage(caughtError));
@@ -1050,8 +1128,8 @@ export function TripPlanner({ stations }: TripPlannerProps) {
 
   if (isResultsView && plan) {
     return (
-      <div className="mx-auto grid max-w-5xl gap-4">
-        <div className="grid justify-items-start gap-3">
+      <div className="mx-auto grid max-w-7xl gap-4 lg:gap-6">
+        <div className="grid justify-items-start gap-3 lg:grid-cols-[auto_1fr] lg:items-end lg:gap-x-5">
           <button
             type="button"
             onClick={closeResultsView}
@@ -1068,32 +1146,45 @@ export function TripPlanner({ stations }: TripPlannerProps) {
           </div>
         </div>
 
-        <GoogleMap
-          stations={mapStations}
-          center={plan.origin}
-          routeOrigin={plan.origin}
-          routeDestination={plan.destination}
-          routePath={plan.routePath}
-          className="min-h-[22rem]"
-        />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(23rem,0.8fr)] lg:items-start lg:gap-6">
+          <div className="lg:sticky lg:top-24">
+            <GoogleMap
+              stations={mapStations}
+              center={plan.origin}
+              routeOrigin={plan.origin}
+              routeDestination={plan.destination}
+              routePath={plan.routePath}
+              className="min-h-[22rem] lg:min-h-[calc(100vh-10rem)] lg:max-h-[48rem]"
+            />
+          </div>
 
-        <TripSummaryCard plan={plan} destinationName={end} />
-        <ChargingItineraryCard plan={plan} startName={start} destinationName={end} />
+          <div className="grid gap-4">
+            <TripSummaryCard plan={plan} destinationName={end} />
+            <ChargingItineraryCard
+              plan={plan}
+              startName={start}
+              destinationName={end}
+              changingStopIndex={changingStopIndex}
+              stopError={error}
+              onStopChange={(index, stationId) => void changeChargingStop(index, stationId)}
+            />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
-      <section className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)] lg:items-start lg:gap-7">
+      <section className="rounded-2xl border border-border bg-surface p-4 sm:p-6 lg:p-8">
         <p className="text-sm font-semibold text-primary">Plan my trip</p>
-        <h1 className="mt-2 text-3xl font-bold text-foreground">Build a charging route</h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
+        <h1 className="mt-2 text-3xl font-bold text-foreground lg:text-4xl">Build a charging route</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted lg:text-base lg:leading-7">
           Enter your journey and the planner will place verified charging stops before your battery range runs out.
         </p>
 
-        <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
-          <fieldset className="rounded-2xl border border-border bg-background p-2">
+        <form className="mt-6 grid gap-4 lg:grid-cols-2 lg:gap-5" onSubmit={handleSubmit}>
+          <fieldset className="rounded-2xl border border-border bg-background p-2 lg:col-span-2">
             <legend className="sr-only">Enter your route</legend>
             <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] grid-rows-2 rounded-xl border border-border bg-secondary">
               <div className="relative col-start-1 row-span-2 row-start-1 flex flex-col items-center justify-around py-3 text-primary">
@@ -1159,42 +1250,67 @@ export function TripPlanner({ stations }: TripPlannerProps) {
           </fieldset>
 
 
-          {usingSavedRange ? (
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Car range from profile</p>
-                <p className="mt-1 text-lg font-bold text-foreground">{rangeKm} km per full charge</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setUsingSavedRange(false)}
-                className="min-h-10 rounded-lg border border-border bg-secondary px-3 text-xs font-semibold text-foreground transition hover:border-primary hover:text-primary"
-              >
-                Change
-              </button>
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="car-range" className="text-sm font-semibold text-foreground">Range per full charge</label>
-              <div className="relative mt-2">
-                <input
-                  id="car-range"
-                  type="number"
-                  min="30"
-                  max="1200"
-                  step="1"
-                  value={rangeKm}
-                  onChange={(event) => setRangeKm(event.target.value)}
-                  placeholder="200"
-                  className="min-h-12 w-full rounded-xl border border-border bg-secondary px-4 pr-14 text-base text-foreground placeholder:text-muted/70"
-                />
-                <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-muted">km</span>
-              </div>
-              <p className="mt-2 text-xs leading-5 text-muted">This range will be saved locally for your profile and future trips.</p>
-            </div>
-          )}
+          <div className="lg:col-span-2">
+            <VehicleSelector
+              value={vehicleQuery}
+              onValueChange={(value) => {
+                setVehicleQuery(value);
+                setSelectedVehicle(null);
+                setRangeKm("");
+                setEditingRange(false);
+              }}
+              onSelect={(vehicle) => {
+                setSelectedVehicle(vehicle);
+                setVehicleQuery(vehicleLabel(vehicle));
+                setRangeKm(String(vehicle.rangeKm));
+                setEditingRange(false);
+                setError(null);
+              }}
+            />
+          </div>
 
-          <div>
+          {selectedVehicle ? (
+            <div className="h-full rounded-xl border border-border bg-background p-3 lg:p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Full-charge range</p>
+                  {!editingRange ? (
+                    <p className="mt-1 text-lg font-bold text-foreground">{rangeKm} km</p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingRange((editing) => !editing)}
+                  aria-label={editingRange ? "Finish editing car range" : "Edit car range"}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-secondary text-primary transition hover:border-primary"
+                >
+                  <span className="material-symbols-outlined text-[1.2rem]" aria-hidden="true">
+                    {editingRange ? "check" : "edit"}
+                  </span>
+                </button>
+              </div>
+              {editingRange ? (
+                <div className="relative mt-2">
+                  <input
+                    id="car-range"
+                    type="number"
+                    min="30"
+                    max="1200"
+                    step="1"
+                    value={rangeKm}
+                    onChange={(event) => setRangeKm(event.target.value)}
+                    className="min-h-12 w-full rounded-xl border border-border bg-secondary px-4 pr-14 text-base text-foreground"
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-muted">km</span>
+                </div>
+              ) : null}
+              <p className="mt-2 text-xs leading-5 text-muted">
+                Filled from the selected variant. Use the pencil if your real-world range is different.
+              </p>
+            </div>
+          ) : null}
+
+          <div className={selectedVehicle ? "" : "lg:col-span-2"}>
             <label htmlFor="current-charge" className="text-sm font-semibold text-foreground">Current battery charge</label>
             <div className="relative mt-2">
               <input
@@ -1214,7 +1330,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
           </div>
 
           {error ? (
-            <div role="alert" className="rounded-xl border border-border bg-background p-3 text-sm leading-6 text-foreground">
+            <div role="alert" className="rounded-xl border border-border bg-background p-3 text-sm leading-6 text-foreground lg:col-span-2">
               {error}
             </div>
           ) : null}
@@ -1222,7 +1338,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-secondary transition hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-secondary transition hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60 lg:col-span-2 lg:min-h-14 lg:text-base"
           >
             {loading ? (
               <span className="inline-flex items-center gap-2">
@@ -1239,12 +1355,133 @@ export function TripPlanner({ stations }: TripPlannerProps) {
         </form>
       </section>
 
-      <section className="min-w-0">
+      <section className="min-w-0 lg:sticky lg:top-24">
         {loading ? (
           <TripPlanningLoader />
-        ) : null}
+        ) : (
+          <TripDesktopPreview
+            selectedVehicle={selectedVehicle}
+            rangeKm={rangeKm}
+            currentChargePercent={currentChargePercent}
+          />
+        )}
       </section>
     </div>
+  );
+}
+
+function TripDesktopPreview({
+  selectedVehicle,
+  rangeKm,
+  currentChargePercent,
+}: {
+  selectedVehicle: PlannerVehicle | null;
+  rangeKm: string;
+  currentChargePercent: string;
+}) {
+  const parsedRange = Number(rangeKm);
+  const parsedCharge = Number(currentChargePercent);
+  const hasRange = Number.isFinite(parsedRange) && parsedRange > 0;
+  const hasCharge = Number.isFinite(parsedCharge) && parsedCharge >= 0 && parsedCharge <= 100;
+  const safeRangeNow = hasRange && hasCharge
+    ? Math.max(0, Math.round(parsedRange * ((parsedCharge - ARRIVAL_RESERVE_PERCENT) / 100)))
+    : null;
+
+  return (
+    <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface lg:block">
+      <div className="border-b border-border bg-background p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Trip readiness</p>
+            <h2 className="mt-2 text-2xl font-bold text-foreground">Your EV at a glance</h2>
+          </div>
+          <span className="material-symbols-outlined grid h-12 w-12 place-items-center rounded-full bg-primary text-[1.5rem] text-secondary" aria-hidden="true">
+            route
+          </span>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-muted">
+          Complete the details on the left. Your route, safe charging choices, and battery plan will appear here.
+        </p>
+      </div>
+
+      <div className="grid gap-5 p-6">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-border bg-background p-4">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-wide text-muted">Selected vehicle</p>
+            <p className="mt-2 line-clamp-2 text-sm font-bold leading-5 text-foreground">
+              {selectedVehicle ? vehicleLabel(selectedVehicle) : "Choose your car"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border bg-background p-4">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-wide text-muted">Safe range now</p>
+            <p className="mt-2 text-xl font-bold text-primary">
+              {safeRangeNow === null ? "—" : `${safeRangeNow} km`}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-background p-5">
+          <p className="text-sm font-bold text-foreground">How your route is built</p>
+          <ol className="mt-5 grid gap-0">
+            <DesktopPreviewStep
+              icon="location_on"
+              title="Start with your current charge"
+              detail={hasCharge ? `${parsedCharge}% battery entered` : "Enter your current battery"}
+            />
+            <DesktopPreviewStep
+              icon="ev_station"
+              title="Choose reachable chargers"
+              detail="See early and later stops within the safe range"
+            />
+            <DesktopPreviewStep
+              icon="flag"
+              title="Reach your destination"
+              detail="Extra stops are added whenever the next point is too far"
+              last
+            />
+          </ol>
+        </div>
+
+        <div className="rounded-xl bg-primary p-4 text-secondary">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-[1.35rem]" aria-hidden="true">shield</span>
+            <div>
+              <p className="text-sm font-bold">{ARRIVAL_RESERVE_PERCENT}% arrival reserve</p>
+              <p className="mt-0.5 text-xs leading-5 text-secondary/75">
+                Reachable distances keep this safety buffer available.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopPreviewStep({
+  icon,
+  title,
+  detail,
+  last,
+}: {
+  icon: string;
+  title: string;
+  detail: string;
+  last?: boolean;
+}) {
+  return (
+    <li className="grid grid-cols-[2.5rem_1fr] gap-x-3">
+      <div className="flex flex-col items-center">
+        <span className="material-symbols-outlined grid h-9 w-9 place-items-center rounded-full border border-primary/30 bg-secondary text-[1.1rem] text-primary" aria-hidden="true">
+          {icon}
+        </span>
+        {!last ? <span className="min-h-8 w-px flex-1 bg-border" aria-hidden="true" /> : null}
+      </div>
+      <div className={last ? "pb-0" : "pb-5"}>
+        <p className="text-sm font-bold text-foreground">{title}</p>
+        <p className="mt-1 text-xs leading-5 text-muted">{detail}</p>
+      </div>
+    </li>
   );
 }
 
@@ -1293,25 +1530,66 @@ function TripSummaryCard({ plan, destinationName }: { plan: TripPlan; destinatio
         <TripMetric label="Drive time" value={formatDuration(plan.totalDurationSeconds)} />
         <TripMetric label="Charge stops" value={String(plan.stops.length)} />
       </div>
+      <p className="mt-3 text-center text-xs text-muted">Planned for {plan.vehicleName} at {plan.carRangeKm} km per full charge.</p>
     </section>
   );
+}
+
+function stopAlternatives(plan: TripPlan, stopIndex: number) {
+  const currentStop = plan.stops[stopIndex];
+  const previousProgressKm = plan.stops[stopIndex - 1]?.progressKm || 0;
+  const safeRangeKm = plan.carRangeKm * ((100 - ARRIVAL_RESERVE_PERCENT) / 100);
+  const previousLegRangeKm = stopIndex === 0
+    ? plan.carRangeKm * (Math.max(0, plan.currentChargePercent - ARRIVAL_RESERVE_PERCENT) / 100)
+    : safeRangeKm;
+  const prefixStationIds = plan.stops
+    .slice(0, stopIndex)
+    .map((stop) => stop.station.id);
+  const options = reachableChargingOptions(
+    plan.chargingCandidates,
+    previousProgressKm,
+    previousLegRangeKm,
+    prefixStationIds,
+  );
+
+  if (!options.some((candidate) => candidate.station.id === currentStop.station.id)) {
+    options.push(plan.chargingCandidates.find((candidate) => candidate.station.id === currentStop.station.id) || {
+      station: currentStop.station,
+      coordinates: currentStop.coordinates,
+      progressKm: currentStop.progressKm,
+      corridorKm: 0,
+    });
+    options.sort((first, second) => first.progressKm - second.progressKm);
+  }
+
+  return options;
 }
 
 function ChargingItineraryCard({
   plan,
   startName,
   destinationName,
+  changingStopIndex,
+  stopError,
+  onStopChange,
 }: {
   plan: TripPlan;
   startName: string;
   destinationName: string;
+  changingStopIndex: number | null;
+  stopError: string | null;
+  onStopChange: (index: number, stationId: string) => void;
 }) {
   return (
     <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-xl font-bold text-foreground">Your charging itinerary</h2>
       <p className="mt-1 text-xs leading-5 text-muted">
-        Stops are selected as close as possible to a {ARRIVAL_RESERVE_PERCENT}% arrival charge without going below it. The smallest planned reserve is about {Math.round(plan.reserveRangeKm)} km. Charging time is not included.
+        Safe stops are selected automatically. Each selector shows every charger reachable from the previous point. If you choose an earlier stop, the remaining stops are recalculated automatically. The smallest planned reserve is about {Math.round(plan.reserveRangeKm)} km. Charging time is not included.
       </p>
+
+      {stopError ? (
+        <p role="alert" className="mt-3 rounded-xl border border-border bg-background p-3 text-sm leading-6 text-foreground">{stopError}</p>
+      ) : null}
 
       <ol className="mt-4 grid gap-3">
         <ItineraryPoint
@@ -1331,6 +1609,7 @@ function ChargingItineraryCard({
             plan.carRangeKm,
             departureCharge,
           );
+          const alternatives = stopAlternatives(plan, index);
 
           return (
             <ItineraryPoint
@@ -1339,6 +1618,29 @@ function ChargingItineraryCard({
               subtitle={`${stop.arrivalLeg.distance?.text || "Distance unavailable"} drive - arrive near ${arrivalCharge}% - charge to ${chargeTarget}% before continuing`}
               address={stop.station.address}
               index={index + 2}
+              controls={alternatives.length > 1 ? (
+                <div className="mt-3 border-t border-border pt-3">
+                  <label htmlFor={`charging-stop-${index}`} className="text-xs font-semibold text-foreground">
+                    Choose charging stop {index + 1}
+                  </label>
+                  <select
+                    id={`charging-stop-${index}`}
+                    value={stop.station.id}
+                    disabled={changingStopIndex !== null}
+                    onChange={(event) => onStopChange(index, event.target.value)}
+                    className="mt-2 min-h-11 w-full rounded-lg border border-border bg-secondary px-3 text-sm text-foreground disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {alternatives.map((candidate) => (
+                      <option key={candidate.station.id} value={candidate.station.id}>
+                        {candidate.station.name} · near {Math.round(candidate.progressKm)} km
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[0.68rem] leading-5 text-muted">
+                    {changingStopIndex === index ? "Checking the new route..." : `${alternatives.length} reachable options for this leg.`}
+                  </p>
+                </div>
+              ) : null}
             />
           );
         })}
@@ -1459,12 +1761,14 @@ function ItineraryPoint({
   address,
   index,
   destination,
+  controls,
 }: {
   title: string;
   subtitle: string;
   address?: string | null;
   index: number;
   destination?: boolean;
+  controls?: ReactNode;
 }) {
   return (
     <li className="flex gap-3 rounded-xl border border-border bg-background p-3">
@@ -1475,6 +1779,7 @@ function ItineraryPoint({
         <h3 className="font-semibold text-foreground">{title}</h3>
         {address ? <p className="mt-1 text-xs leading-5 text-muted">{address}</p> : null}
         <p className="mt-1 text-xs font-medium text-primary">{subtitle}</p>
+        {controls}
       </div>
     </li>
   );

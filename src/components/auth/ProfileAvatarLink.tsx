@@ -53,10 +53,11 @@ export function ProfileAvatarLink() {
 
   const avatar = auth?.session?.user?.user_metadata?.avatar_data_url;
   const initial = profileInitial(auth);
+  const profileHref = auth?.mode === "auth" ? ROUTES.profile : ROUTES.login;
 
   return (
     <Link
-      href={ROUTES.profile}
+      href={profileHref}
       aria-label="Open profile"
       className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface-strong text-sm font-bold text-primary transition hover:border-primary sm:h-11 sm:w-11"
     >

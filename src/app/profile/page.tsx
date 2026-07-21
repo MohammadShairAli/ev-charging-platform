@@ -1,8 +1,8 @@
 import { ProfilePanel } from "@/src/components/auth/ProfilePanel";
-import { requireSessionAccess } from "@/src/lib/auth-guard";
+import { requireAuthenticatedSession } from "@/src/lib/auth-guard";
 
 export default async function ProfilePage() {
-  await requireSessionAccess();
+  await requireAuthenticatedSession();
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
