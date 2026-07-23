@@ -12,9 +12,17 @@ type StationCardProps = {
   station: Station;
   showPlaceImage?: boolean;
   showMapButton?: boolean;
+  distanceFromCurrentLocation?: boolean;
+  distanceStatus?: "loading" | "ready" | "unavailable";
 };
 
-export function StationCard({ station, showPlaceImage = false, showMapButton = false }: StationCardProps) {
+export function StationCard({
+  station,
+  showPlaceImage = false,
+  showMapButton = false,
+  distanceFromCurrentLocation = false,
+  distanceStatus = "ready",
+}: StationCardProps) {
   const directionsUrl = googleMapsDirectionsUrl(station);
   const placeImageUrl = station.google_place_id
     ? `/api/place-photo?placeId=${encodeURIComponent(station.google_place_id)}`
@@ -55,7 +63,18 @@ export function StationCard({ station, showPlaceImage = false, showMapButton = f
           <span className="inline-flex items-center gap-1.5">
             <Star /> {station.rating ? station.rating.toFixed(1) : "No rating"}
           </span>
-          <span>{formatDistance(station.distanceKm)}</span>
+          {distanceFromCurrentLocation ? (
+            <span className="inline-flex items-center gap-1.5">
+              <AppIcon name="my_location" className="h-4 w-4 text-primary" />
+              {distanceStatus === "loading"
+                ? "Locating you..."
+                : distanceStatus === "unavailable"
+                  ? "Location unavailable"
+                  : `${formatDistance(station.distanceKm)} from you`}
+            </span>
+          ) : (
+            <span>{formatDistance(station.distanceKm)}</span>
+          )}
         </div>
         <div className="flex w-full gap-2 sm:w-auto sm:self-start">
           <ButtonLink href={`${ROUTES.stations}/${station.id}`} variant="secondary" className="flex-1 sm:flex-none">

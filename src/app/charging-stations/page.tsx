@@ -70,7 +70,12 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
           <div className="my-3 rounded-full bg-surface-strong px-4 py-2 text-sm font-medium text-muted">
             {stations.length} station{stations.length === 1 ? "" : "s"} found
           </div>
-          <StationList stations={paginatedStations} showPlaceImage showMapButton />
+          <StationList
+            stations={paginatedStations}
+            showPlaceImage
+            showMapButton
+            distanceFromCurrentLocation
+          />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -105,7 +110,12 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
             <div className="rounded-full bg-surface-strong px-4 py-2 text-sm font-medium text-muted">
               {stations.length} station{stations.length === 1 ? "" : "s"} found
             </div>
-            <StationList stations={paginatedStations} showPlaceImage showMapButton />
+            <StationList
+              stations={paginatedStations}
+              showPlaceImage
+              showMapButton
+              distanceFromCurrentLocation
+            />
             <Pagination currentPage={currentPage} totalPages={totalPages} query={query} sort={sort} origin={origin} />
           </div>
           <div className="order-1 lg:sticky lg:top-24 lg:order-2 lg:self-start">

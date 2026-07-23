@@ -16,6 +16,7 @@ type StationListProps = {
   limit?: number;
   useNearbyApi?: boolean;
   fallbackOrigin?: LatLngLiteral;
+  distanceFromCurrentLocation?: boolean;
 };
 
 export function StationList({
@@ -25,6 +26,7 @@ export function StationList({
   limit,
   useNearbyApi = false,
   fallbackOrigin,
+  distanceFromCurrentLocation = false,
 }: StationListProps) {
   const emergencyData = useOptionalEmergencyStationData();
   const [origin, setOrigin] = useState<LatLngLiteral | null>(null);
@@ -32,6 +34,7 @@ export function StationList({
   const [nearbyStatus, setNearbyStatus] = useState<"loading" | "idle" | "unavailable">(
     useNearbyApi ? "loading" : "idle",
   );
+  const [locationStatus, setLocationStatus] = useState<"loading" | "ready" | "unavailable">("loading");
   const resolvedOrigin = useNearbyApi && emergencyData ? emergencyData.origin : origin;
   const resolvedNearbyStations = useNearbyApi && emergencyData ? emergencyData.nearbyStations : nearbyStations;
   const resolvedNearbyStatus = useNearbyApi && emergencyData ? emergencyData.nearbyStatus : nearbyStatus;
@@ -101,6 +104,7 @@ export function StationList({
     };
 
     if (!navigator.geolocation) {
+      window.setTimeout(() => setLocationStatus("unavailable"), 0);
       if (useNearbyApi) {
         window.setTimeout(loadFallbackOrigin, 0);
       }
@@ -115,6 +119,7 @@ export function StationList({
         };
 
         setOrigin(currentOrigin);
+        setLocationStatus("ready");
 
         if (!useNearbyApi) {
           return;
@@ -123,6 +128,7 @@ export function StationList({
         fetchNearbyStations(currentOrigin);
       },
       () => {
+        setLocationStatus("unavailable");
         loadFallbackOrigin();
       },
       {
@@ -149,6 +155,8 @@ export function StationList({
           station={station}
           showPlaceImage={showPlaceImage}
           showMapButton={showMapButton}
+          distanceFromCurrentLocation={distanceFromCurrentLocation}
+          distanceStatus={locationStatus}
         />
       ))}
     </div>
