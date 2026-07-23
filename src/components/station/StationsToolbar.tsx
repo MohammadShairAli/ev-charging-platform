@@ -9,9 +9,10 @@ import type { StationSort } from "@/src/types";
 type StationsToolbarProps = {
   query: string;
   sort: StationSort;
+  showSearch?: boolean;
 };
 
-export function StationsToolbar({ query, sort }: StationsToolbarProps) {
+export function StationsToolbar({ query, sort, showSearch = true }: StationsToolbarProps) {
   const router = useRouter();
   const params = useSearchParams();
   const hasLocation = params.has("lat") && params.has("lng");
@@ -88,9 +89,13 @@ export function StationsToolbar({ query, sort }: StationsToolbarProps) {
   }, [hasLocation, pushSort, sort]);
 
   return (
-    <div className="grid gap-3 rounded-lg border-0 bg-transparent p-0 sm:border sm:border-border sm:bg-surface sm:p-3 md:grid-cols-[1fr_280px]">
-      <SearchBar action={ROUTES.stations} defaultValue={query} compact className="shadow-none" />
-      <div>
+    <div
+      className={`gap-3 rounded-lg border-0 bg-transparent p-0 sm:border sm:border-border sm:bg-surface sm:p-3 ${
+        showSearch ? "grid md:grid-cols-[1fr_280px]" : "flex justify-end"
+      }`}
+    >
+      {showSearch ? <SearchBar action={ROUTES.stations} defaultValue={query} compact className="shadow-none" /> : null}
+      <div className={showSearch ? "" : "w-full sm:max-w-[280px]"}>
         <label className="sr-only" htmlFor="sort">
           Sort stations
         </label>

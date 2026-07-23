@@ -111,6 +111,16 @@ type GooglePlaceLibrary = {
   };
 };
 
+type GoogleGeocodingLibrary = {
+  Geocoder: new () => {
+    geocode: (request: {
+      location: LatLngLiteral;
+    }) => Promise<{
+      results?: Array<{ formatted_address?: string }>;
+    }>;
+  };
+};
+
 type GoogleAutocompletePlace = {
   displayName?: string;
   formattedAddress?: string;
@@ -183,7 +193,9 @@ const MAX_CHARGING_STOPS = 8;
 const MAX_ROUTE_SEARCH_CHECKPOINTS = 16;
 const TRIP_RESULT_QUERY_KEY = "result";
 const TRIP_RESULT_QUERY_VALUE = "1";
+const AUTOCOMPLETE_DEBOUNCE_MS = 100;
 let mapsLoadingPromise: Promise<TripGoogleMaps> | null = null;
+let placesLoadingPromise: Promise<GooglePlaceLibrary> | null = null;
 
 function loadGoogleMaps() {
   const tripWindow = window as TripWindow;
@@ -231,6 +243,19 @@ function loadGoogleMaps() {
   });
 
   return mapsLoadingPromise;
+}
+
+function loadGooglePlaces() {
+  if (!placesLoadingPromise) {
+    placesLoadingPromise = loadGoogleMaps()
+      .then((maps) => maps.importLibrary("places") as Promise<GooglePlaceLibrary>)
+      .catch((error) => {
+        placesLoadingPromise = null;
+        throw error;
+      });
+  }
+
+  return placesLoadingPromise;
 }
 
 function toLiteral(point?: GoogleLatLng): LatLngLiteral | null {
@@ -609,6 +634,7 @@ function LocationAutocompleteInput({
   value,
   placeholder,
   className = "",
+  trailingAction,
   onValueChange,
   onPlaceSelect,
 }: {
@@ -617,6 +643,7 @@ function LocationAutocompleteInput({
   value: string;
   placeholder: string;
   className?: string;
+  trailingAction?: ReactNode;
   onValueChange: (value: string) => void;
   onPlaceSelect: (value: string, coordinates: LatLngLiteral | null) => void;
 }) {
@@ -628,6 +655,12 @@ function LocationAutocompleteInput({
   const sessionTokenRef = useRef<unknown>(null);
   const skipNextSearchRef = useRef(false);
   const userEditedRef = useRef(false);
+
+  useEffect(() => {
+    void loadGooglePlaces().catch(() => {
+      // The input will show the existing API error if loading still fails after typing.
+    });
+  }, []);
 
   useEffect(() => {
     if (skipNextSearchRef.current) {
@@ -649,8 +682,7 @@ function LocationAutocompleteInput({
     requestIdRef.current = requestId;
     const timeout = window.setTimeout(async () => {
       try {
-        const maps = await loadGoogleMaps();
-        const placesLibrary = await maps.importLibrary("places") as GooglePlaceLibrary;
+        const placesLibrary = await loadGooglePlaces();
         const AutocompleteSuggestion = placesLibrary.AutocompleteSuggestion;
         const AutocompleteSessionToken = placesLibrary.AutocompleteSessionToken;
 
@@ -683,7 +715,7 @@ function LocationAutocompleteInput({
           setIsOpen(true);
         }
       }
-    }, 250);
+    }, AUTOCOMPLETE_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timeout);
   }, [value]);
@@ -763,8 +795,15 @@ function LocationAutocompleteInput({
         aria-expanded={isOpen}
         aria-controls={`${id}-suggestions`}
         aria-activedescendant={activeIndex >= 0 ? `${id}-suggestion-${activeIndex}` : undefined}
-        className="mt-0.5 min-h-8 w-full bg-transparent text-base font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted/70"
+        className={`mt-0.5 min-h-8 w-full bg-transparent text-base font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted/70 ${
+          trailingAction ? "pr-10" : ""
+        }`}
       />
+      {trailingAction ? (
+        <div className="absolute bottom-1.5 right-1.5 z-10">
+          {trailingAction}
+        </div>
+      ) : null}
 
       {isOpen && suggestionError ? (
         <div
@@ -813,10 +852,12 @@ export function TripPlanner({ stations }: TripPlannerProps) {
   const [currentChargePercent, setCurrentChargePercent] = useState("100");
   const [editingRange, setEditingRange] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [changingStopIndex, setChangingStopIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [showPlannerInfo, setShowPlannerInfo] = useState(false);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -1127,6 +1168,55 @@ export function TripPlanner({ stations }: TripPlannerProps) {
     setPlan(null);
   }
 
+  function useCurrentLocation() {
+    if (!navigator.geolocation) {
+      setError("Current location is not supported by this browser.");
+      return;
+    }
+
+    setLocating(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coordinates = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        const coordinateLabel = `${coordinates.lat.toFixed(5)}, ${coordinates.lng.toFixed(5)}`;
+
+        setStart(coordinateLabel);
+        setStartLocation(coordinates);
+        setPlan(null);
+
+        void (async () => {
+          try {
+            const maps = await loadGoogleMaps();
+            const { Geocoder } = await maps.importLibrary("geocoding") as GoogleGeocodingLibrary;
+            const result = await new Geocoder().geocode({ location: coordinates });
+            const locationName = result.results?.[0]?.formatted_address?.trim();
+
+            if (locationName) {
+              setStart(locationName);
+            }
+          } catch {
+            // Coordinates remain usable when a readable address is unavailable.
+          } finally {
+            setLocating(false);
+          }
+        })();
+      },
+      () => {
+        setError("Your current location could not be accessed. Allow location access or enter a starting point.");
+        setLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 300000,
+        timeout: 10000,
+      },
+    );
+  }
+
   if (isResultsView && plan) {
     return (
       <div className="mx-auto grid max-w-7xl gap-4 lg:gap-6">
@@ -1141,9 +1231,14 @@ export function TripPlanner({ stations }: TripPlannerProps) {
             </svg>
             Back
           </button>
-          <div>
-            <p className="text-sm font-semibold text-primary">Plan my trip</p>
-            <h1 className="mt-1 text-3xl font-bold text-foreground">Your charging route</h1>
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-primary/30 text-primary">
+              <AppIcon name="route" className="h-6 w-6" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-primary">Trip ready</p>
+              <h1 className="text-3xl font-bold text-foreground">Your route</h1>
+            </div>
           </div>
         </div>
 
@@ -1179,27 +1274,43 @@ export function TripPlanner({ stations }: TripPlannerProps) {
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)] lg:items-start lg:gap-7">
       <section className="rounded-2xl border border-border bg-surface p-4 sm:p-6 lg:p-8">
         <p className="text-sm font-semibold text-primary">Plan my trip</p>
-        <h1 className="mt-2 text-3xl font-bold text-foreground lg:text-4xl">Build a charging route</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted lg:text-base lg:leading-7">
-          Enter your journey and the planner will place verified charging stops before your battery range runs out.
-        </p>
+        <div className="mt-2 flex items-center gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-secondary">
+            <AppIcon name="route" className="h-6 w-6" />
+          </span>
+          <h1 className="text-3xl font-bold text-foreground lg:text-4xl">Build a charging route</h1>
+          <button
+            type="button"
+            onClick={() => setShowPlannerInfo((visible) => !visible)}
+            aria-label={showPlannerInfo ? "Hide planner details" : "Read more about trip planning"}
+            aria-expanded={showPlannerInfo}
+            aria-controls="planner-intro-details"
+            className={`ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-full border transition ${
+              showPlannerInfo
+                ? "border-primary bg-primary text-secondary"
+                : "border-border bg-background text-primary hover:border-primary"
+            }`}
+          >
+            <AppIcon name={showPlannerInfo ? "close" : "read_more"} className="h-5 w-5" />
+          </button>
+        </div>
+        {showPlannerInfo ? (
+          <p id="planner-intro-details" className="mt-3 max-w-2xl rounded-xl bg-background p-3 text-sm leading-6 text-muted">
+            Add your route, vehicle, and battery level. We’ll place reachable charging stops while keeping a safe arrival reserve.
+          </p>
+        ) : null}
 
-        <form className="mt-6 grid gap-4 lg:grid-cols-2 lg:gap-5" onSubmit={handleSubmit}>
+        <form className="mt-5 grid gap-4 lg:grid-cols-2 lg:gap-5" onSubmit={handleSubmit}>
           <fieldset className="rounded-2xl border border-border bg-background p-2 lg:col-span-2">
             <legend className="sr-only">Enter your route</legend>
             <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] grid-rows-2 rounded-xl border border-border bg-secondary">
               <div className="relative col-start-1 row-span-2 row-start-1 flex flex-col items-center justify-around py-3 text-primary">
                 <span className="absolute bottom-[2.65rem] top-[2.65rem] w-px bg-border" aria-hidden="true" />
                 <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-secondary" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-                    <circle cx="10.5" cy="10.5" r="6.5" />
-                    <path d="m15.5 15.5 4 4" strokeLinecap="round" />
-                  </svg>
+                  <AppIcon name="location_on" className="h-5 w-5" />
                 </span>
                 <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-secondary" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
-                    <path d="M5 3.5a1 1 0 0 1 2 0V5h10.4a1 1 0 0 1 .8 1.6L16 9.5l2.2 2.9a1 1 0 0 1-.8 1.6H7v6.5a1 1 0 0 1-2 0v-17Z" />
-                  </svg>
+                  <AppIcon name="flag" className="h-5 w-5" />
                 </span>
               </div>
 
@@ -1209,6 +1320,18 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                 value={start}
                 placeholder="Enter starting point"
                 className="col-start-2 row-start-1 z-30 border-b border-border"
+                trailingAction={(
+                  <button
+                    type="button"
+                    onClick={useCurrentLocation}
+                    disabled={locating}
+                    aria-label={locating ? "Getting your current location" : "Use current location"}
+                    title={locating ? "Getting your current location" : "Use current location"}
+                    className="grid h-9 w-9 place-items-center rounded-full text-primary transition hover:bg-background disabled:cursor-wait disabled:opacity-60"
+                  >
+                    <AppIcon name="my_location" className={`h-5 w-5 ${locating ? "motion-safe:animate-pulse" : ""}`} />
+                  </button>
+                )}
                 onValueChange={(value) => {
                   setStart(value);
                   setStartLocation(null);
@@ -1273,11 +1396,16 @@ export function TripPlanner({ stations }: TripPlannerProps) {
           {selectedVehicle ? (
             <div className="h-full rounded-xl border border-border bg-background p-3 lg:p-4">
               <div className="flex items-center justify-between gap-4">
-                <div>
+                <div className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
+                    <AppIcon name="speed" className="h-5 w-5" />
+                  </span>
+                  <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-primary">Full-charge range</p>
                   {!editingRange ? (
                     <p className="mt-1 text-lg font-bold text-foreground">{rangeKm} km</p>
                   ) : null}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -1303,14 +1431,14 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                   <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-muted">km</span>
                 </div>
               ) : null}
-              <p className="mt-2 text-xs leading-5 text-muted">
-                Filled from the selected variant. Use the pencil if your real-world range is different.
-              </p>
             </div>
           ) : null}
 
           <div className={selectedVehicle ? "" : "lg:col-span-2"}>
-            <label htmlFor="current-charge" className="text-sm font-semibold text-foreground">Current battery charge</label>
+            <label htmlFor="current-charge" className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+              <AppIcon name="battery_charging_full" className="h-5 w-5 text-primary" />
+              <span>Battery now</span>
+            </label>
             <div className="relative mt-2">
               <input
                 id="current-charge"
@@ -1325,7 +1453,6 @@ export function TripPlanner({ stations }: TripPlannerProps) {
               />
               <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-muted">%</span>
             </div>
-            <p className="mt-2 text-xs leading-5 text-muted">Used to check whether you can leave now or need to charge before starting.</p>
           </div>
 
           {error ? (
@@ -1347,9 +1474,14 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                   <circle cx="24" cy="16" r="2.5" className="fill-current" />
                   <path d="m17 7-3 4h3l-2 4 5-6h-3l2-2h-2Z" className="fill-current" />
                 </svg>
-                Planning your safe route...
+                Planning...
               </span>
-            ) : "Make my trip"}
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <AppIcon name="route" className="h-5 w-5" />
+                <span>Plan route</span>
+              </span>
+            )}
           </button>
         </form>
       </section>
@@ -1525,11 +1657,32 @@ function TripSummaryCard({ plan, destinationName }: { plan: TripPlan; destinatio
       <DepartureAdvice plan={plan} destinationName={destinationName} />
 
       <div className="grid grid-cols-3 gap-2">
-        <TripMetric label="Distance" value={`${Math.round(plan.totalDistanceKm)} km`} />
-        <TripMetric label="Drive time" value={formatDuration(plan.totalDurationSeconds)} />
-        <TripMetric label="Charge stops" value={String(plan.stops.length)} />
+        <TripMetric
+          icon="route"
+          label="Distance"
+          value={`${Math.round(plan.totalDistanceKm)} km`}
+          tone="border-primary/25"
+          iconTone="text-primary"
+        />
+        <TripMetric
+          icon="schedule"
+          label="Time"
+          value={formatDuration(plan.totalDurationSeconds)}
+          tone="border-border"
+          iconTone="text-muted"
+        />
+        <TripMetric
+          icon="ev_station"
+          label="Stops"
+          value={String(plan.stops.length)}
+          tone="border-amber-300/70"
+          iconTone="text-amber-700"
+        />
       </div>
-      <p className="mt-3 text-center text-xs text-muted">Planned for {plan.vehicleName} at {plan.carRangeKm} km per full charge.</p>
+      <div className="mt-3 flex items-center justify-center gap-2 text-center text-xs text-muted">
+        <AppIcon name="electric_car" className="h-4 w-4 text-primary" />
+        <span>{plan.vehicleName} · {plan.carRangeKm} km</span>
+      </div>
     </section>
   );
 }
@@ -1579,12 +1732,35 @@ function ChargingItineraryCard({
   stopError: string | null;
   onStopChange: (index: number, stationId: string) => void;
 }) {
+  const [showItineraryInfo, setShowItineraryInfo] = useState(false);
+
   return (
     <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
-      <h2 className="text-xl font-bold text-foreground">Your charging itinerary</h2>
-      <p className="mt-1 text-xs leading-5 text-muted">
-        Safe stops are selected automatically. Each selector shows every charger reachable from the previous point. If you choose an earlier stop, the remaining stops are recalculated automatically. The smallest planned reserve is about {Math.round(plan.reserveRangeKm)} km. Charging time is not included.
-      </p>
+      <div className="flex items-center gap-3">
+        <span className="grid h-10 w-10 place-items-center rounded-full border border-primary/30 text-primary">
+          <AppIcon name="ev_station" className="h-5 w-5" />
+        </span>
+        <h2 className="text-xl font-bold text-foreground">Charging itinerary</h2>
+        <button
+          type="button"
+          onClick={() => setShowItineraryInfo((visible) => !visible)}
+          aria-label={showItineraryInfo ? "Hide itinerary details" : "Read more about this itinerary"}
+          aria-expanded={showItineraryInfo}
+          aria-controls="itinerary-details"
+          className={`ml-auto grid h-9 w-9 place-items-center rounded-full border transition ${
+            showItineraryInfo
+              ? "border-primary bg-primary text-secondary"
+              : "border-border bg-background text-primary hover:border-primary"
+          }`}
+        >
+          <AppIcon name={showItineraryInfo ? "close" : "read_more"} className="h-5 w-5" />
+        </button>
+      </div>
+      {showItineraryInfo ? (
+        <p id="itinerary-details" className="mt-3 rounded-xl bg-background p-3 text-xs leading-5 text-muted">
+          Stops are automatically kept within range. Changing one recalculates the rest. Reserve: about {Math.round(plan.reserveRangeKm)} km. Charging time is excluded.
+        </p>
+      ) : null}
 
       {stopError ? (
         <p role="alert" className="mt-3 rounded-xl border border-border bg-background p-3 text-sm leading-6 text-foreground">{stopError}</p>
@@ -1593,8 +1769,9 @@ function ChargingItineraryCard({
       <ol className="mt-4 grid gap-3">
         <ItineraryPoint
           title={startName}
-          subtitle={`Start with ${plan.currentChargePercent}% battery`}
-          index={1}
+          subtitle={`${plan.currentChargePercent}% battery`}
+          icon="location_on"
+          tone="start"
         />
         {plan.stops.map((stop, index) => {
           const nextLeg = plan.stops[index + 1]?.arrivalLeg || plan.finalLeg;
@@ -1614,13 +1791,15 @@ function ChargingItineraryCard({
             <ItineraryPoint
               key={stop.station.id}
               title={stop.station.name}
-              subtitle={`${stop.arrivalLeg.distance?.text || "Distance unavailable"} drive - arrive near ${arrivalCharge}% - charge to ${chargeTarget}% before continuing`}
+              subtitle={`${stop.arrivalLeg.distance?.text || "—"} · arrive ${arrivalCharge}% · leave ${chargeTarget}%`}
               address={stop.station.address}
-              index={index + 2}
+              icon="ev_station"
+              tone="charge"
               controls={alternatives.length > 1 ? (
                 <div className="mt-3 border-t border-border pt-3">
-                  <label htmlFor={`charging-stop-${index}`} className="text-xs font-semibold text-foreground">
-                    Choose charging stop {index + 1}
+                  <label htmlFor={`charging-stop-${index}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                    <AppIcon name="tune" className="h-4 w-4 text-primary" />
+                    <span>Change stop {index + 1}</span>
                   </label>
                   <select
                     id={`charging-stop-${index}`}
@@ -1636,7 +1815,7 @@ function ChargingItineraryCard({
                     ))}
                   </select>
                   <p className="mt-1 text-[0.68rem] leading-5 text-muted">
-                    {changingStopIndex === index ? "Checking the new route..." : `${alternatives.length} reachable options for this leg.`}
+                    {changingStopIndex === index ? "Checking route..." : `${alternatives.length} reachable options`}
                   </p>
                 </div>
               ) : null}
@@ -1645,7 +1824,7 @@ function ChargingItineraryCard({
         })}
         <ItineraryPoint
           title={destinationName}
-          subtitle={`${plan.finalLeg.distance?.text || "Distance unavailable"} final leg - arrive near ${plannedArrivalPercent(
+          subtitle={`${plan.finalLeg.distance?.text || "—"} · arrive ${plannedArrivalPercent(
             plan.finalLeg,
             plan.carRangeKm,
             plan.stops.length
@@ -1655,8 +1834,8 @@ function ChargingItineraryCard({
                   chargeNeededForLeg(plan.finalLeg, plan.carRangeKm).recommendedPercent,
                 ),
           )}%`}
-          index={plan.stops.length + 2}
-          destination
+          icon="flag"
+          tone="destination"
         />
       </ol>
 
@@ -1668,7 +1847,7 @@ function ChargingItineraryCard({
         >
           <span className="inline-flex items-center justify-center gap-2">
             <GoogleMapsIcon />
-            <span>Get Directions</span>
+            <span>Directions</span>
           </span>
         </ButtonLink>
         {plan.stops.length > 3 ? (
@@ -1682,6 +1861,7 @@ function ChargingItineraryCard({
 }
 
 function DepartureAdvice({ plan, destinationName }: { plan: TripPlan; destinationName: string }) {
+  const [showDetails, setShowDetails] = useState(false);
   const firstLeg = plan.stops[0]?.arrivalLeg || plan.finalLeg;
   const firstTarget = plan.stops[0]?.station.name || destinationName;
   const firstLegKm = legDistanceKm(firstLeg);
@@ -1691,34 +1871,68 @@ function DepartureAdvice({ plan, destinationName }: { plan: TripPlan; destinatio
   const directTrip = plan.stops.length === 0;
   let title: string;
   let message: string;
+  let icon: string;
+  let tone: string;
+  let iconTone: string;
 
   if (plan.currentChargePercent >= recommendedPercent) {
-    title = directTrip ? "You can reach without charging" : "You can reach the first charger";
+    title = directTrip ? "Ready to go" : "First charger is reachable";
+    icon = "check";
+    tone = "border-primary/30";
+    iconTone = "text-primary";
     message = directTrip
       ? `Your ${plan.currentChargePercent}% battery gives about ${Math.round(availableRangeKm)} km of range. The destination is ${Math.round(firstLegKm)} km away, so you can arrive with at least ${ARRIVAL_RESERVE_PERCENT}% remaining.`
       : `Your ${plan.currentChargePercent}% battery is enough to reach ${firstTarget}, ${Math.round(firstLegKm)} km away, without falling below the ${ARRIVAL_RESERVE_PERCENT}% arrival reserve.`;
   } else if (plan.currentChargePercent >= minimumPercent) {
-    title = `Reachable, but below the ${ARRIVAL_RESERVE_PERCENT}% reserve`;
+    title = `Charge to ${recommendedPercent}%`;
+    icon = "battery_charging_full";
+    tone = "border-amber-300/70";
+    iconTone = "text-amber-700";
     message = `You can technically reach ${firstTarget}, but charge to ${recommendedPercent}% before leaving to arrive at or just above ${ARRIVAL_RESERVE_PERCENT}%. Add about ${additionalCharge} percentage points.`;
   } else {
     title = "Charge before leaving";
+    icon = "electric_bolt";
+    tone = "border-amber-300/70";
+    iconTone = "text-amber-700";
     message = `Your current ${plan.currentChargePercent}% gives about ${Math.round(availableRangeKm)} km. Charge to ${recommendedPercent}% before leaving so you can cover the ${Math.round(firstLegKm)} km leg and arrive with at least ${ARRIVAL_RESERVE_PERCENT}%. Add approximately ${additionalCharge} percentage points.`;
   }
 
   return (
-    <div className="mb-4 rounded-xl border border-border bg-background p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-primary">Departure check</p>
-      <h2 className="mt-1 text-lg font-bold text-foreground">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-muted">{message}</p>
+    <div className={`mb-4 rounded-xl border bg-background p-4 text-foreground ${tone}`}>
+      <div className="flex items-center gap-3">
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border border-current/25 ${iconTone}`}>
+          <AppIcon name={icon} className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[0.65rem] font-bold uppercase tracking-wide opacity-70">Departure</p>
+          <h2 className="text-lg font-bold">{title}</h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowDetails((visible) => !visible)}
+          aria-label={showDetails ? "Hide departure details" : "Read departure details"}
+          aria-expanded={showDetails}
+          aria-controls="departure-details"
+          className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-primary transition hover:border-primary"
+        >
+          <AppIcon name={showDetails ? "close" : "read_more"} className="h-5 w-5" />
+        </button>
+      </div>
+      {showDetails ? (
+        <p id="departure-details" className="mt-3 border-t border-current/15 pt-3 text-sm leading-6 opacity-80">
+          {message}
+        </p>
+      ) : null}
       <div className="mt-3 grid grid-cols-3 gap-2">
         <ChargeMetric label="Current" value={`${plan.currentChargePercent}%`} />
         <ChargeMetric label="Minimum" value={`${minimumPercent}%`} />
         <ChargeMetric label="Leave with" value={`${recommendedPercent}%`} />
       </div>
       {!directTrip ? (
-        <p className="mt-3 text-xs font-medium text-foreground">
-          This trip cannot be completed without charging; {plan.stops.length} charging stop{plan.stops.length === 1 ? " is" : "s are"} planned.
-        </p>
+        <div className="mt-3 inline-flex items-center gap-2 text-xs font-bold">
+          <AppIcon name="ev_station" className="h-4 w-4" />
+          <span>{plan.stops.length} stop{plan.stops.length === 1 ? "" : "s"} planned</span>
+        </div>
       ) : null}
     </div>
   );
@@ -1726,18 +1940,31 @@ function DepartureAdvice({ plan, destinationName }: { plan: TripPlan; destinatio
 
 function ChargeMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-secondary px-2 py-2.5 text-center">
-      <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-sm font-bold text-foreground">{value}</p>
+    <div className="min-w-0 rounded-lg bg-secondary/80 px-2 py-2.5 text-center">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-wide opacity-65">{label}</p>
+      <p className="mt-1 text-sm font-bold">{value}</p>
     </div>
   );
 }
 
-function TripMetric({ label, value }: { label: string; value: string }) {
+function TripMetric({
+  icon,
+  label,
+  value,
+  tone,
+  iconTone,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  tone: string;
+  iconTone: string;
+}) {
   return (
-    <div className="min-w-0 rounded-xl border border-border bg-background px-3 py-3 text-center">
-      <p className="text-[0.68rem] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 truncate text-sm font-bold text-foreground">{value}</p>
+    <div className={`min-w-0 rounded-xl border bg-background px-2 py-3 text-center text-foreground ${tone}`}>
+      <AppIcon name={icon} className={`mx-auto h-5 w-5 ${iconTone}`} />
+      <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-bold">{value}</p>
     </div>
   );
 }
@@ -1758,25 +1985,31 @@ function ItineraryPoint({
   title,
   subtitle,
   address,
-  index,
-  destination,
+  icon,
+  tone,
   controls,
 }: {
   title: string;
   subtitle: string;
   address?: string | null;
-  index: number;
-  destination?: boolean;
+  icon: string;
+  tone: "start" | "charge" | "destination";
   controls?: ReactNode;
 }) {
+  const toneClasses = {
+    start: "border border-primary/30 text-primary",
+    charge: "border border-amber-300/70 text-amber-700",
+    destination: "border border-border text-foreground",
+  };
+
   return (
     <li className="flex gap-3 rounded-xl border border-border bg-background p-3">
-      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${destination ? "bg-foreground text-secondary" : "bg-primary text-secondary"}`}>
-        {index}
+      <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${toneClasses[tone]}`}>
+        <AppIcon name={icon} className="h-5 w-5" />
       </span>
       <div className="min-w-0">
         <h3 className="font-semibold text-foreground">{title}</h3>
-        {address ? <p className="mt-1 text-xs leading-5 text-muted">{address}</p> : null}
+        {address ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{address}</p> : null}
         <p className="mt-1 text-xs font-medium text-primary">{subtitle}</p>
         {controls}
       </div>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
+import { SearchBar } from "@/src/components/shared/SearchBar";
 import { StationsToolbar } from "@/src/components/station/StationsToolbar";
 import { StationList } from "@/src/components/station/StationList";
+import { ROUTES } from "@/src/lib/constants";
 import { stationsService } from "@/src/services/stations.service";
 import type { LatLngLiteral, StationSort } from "@/src/types";
 
@@ -35,6 +37,15 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
     <>
       <section className="bg-background sm:hidden">
         <div className="relative h-[19rem] overflow-hidden">
+          <div className="absolute inset-x-3 top-3 z-20">
+            <SearchBar
+              action={ROUTES.stations}
+              defaultValue={query}
+              compact
+              floating
+              className="mx-auto"
+            />
+          </div>
           <GoogleMap
             stations={paginatedStations}
             selectedStationId={paginatedStations[0]?.id}
@@ -53,7 +64,7 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
             </div>
           </div>
 
-          <StationsToolbar query={query} sort={sort} />
+          <StationsToolbar query={query} sort={sort} showSearch={false} />
 
           <div className="my-3 rounded-full bg-surface-strong px-4 py-2 text-sm font-medium text-muted">
             {stations.length} station{stations.length === 1 ? "" : "s"} found
@@ -71,14 +82,22 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
       </section>
 
       <section className="mx-auto hidden max-w-7xl px-4 py-6 sm:block sm:px-6 sm:py-10 lg:px-8">
-        <div className="mb-6 rounded-lg border border-border bg-surface p-5 text-foreground sm:p-7">
+        <div className="rounded-lg border border-border bg-surface p-5 pb-12 text-foreground sm:p-7 sm:pb-14">
           <p className="text-sm font-semibold text-primary">Station directory</p>
           <h1 className="mt-2 text-3xl font-bold tracking-normal sm:text-4xl">Charging Stations</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted sm:text-base">
             Search, filter, and open details for EV charging stations in Pakistan.
           </p>
         </div>
-        <StationsToolbar query={query} sort={sort} />
+        <div className="sticky top-20 z-40 mx-auto -mt-7 mb-5 max-w-3xl px-3 sm:-mt-8 sm:mb-6">
+          <SearchBar
+            action={ROUTES.stations}
+            defaultValue={query}
+            floating
+            className="mx-auto"
+          />
+        </div>
+        <StationsToolbar query={query} sort={sort} showSearch={false} />
         <div className="mt-5 grid gap-5 sm:mt-6 sm:gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <div className="order-2 space-y-4 lg:order-1">
             <div className="rounded-full bg-surface-strong px-4 py-2 text-sm font-medium text-muted">

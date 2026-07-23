@@ -209,9 +209,7 @@ export function VehicleSelector({ value, onValueChange, onSelect }: VehicleSelec
           </ul>
         ) : null}
       </div>
-      {loadError ? <p role="alert" className="mt-2 text-xs leading-5 text-muted">{loadError}</p> : (
-        <p className="mt-2 text-xs leading-5 text-muted">Search the EV and plug-in hybrid database, then select your exact variant.</p>
-      )}
+      {loadError ? <p role="alert" className="mt-2 text-xs leading-5 text-muted">{loadError}</p> : null}
     </div>
   );
 }
