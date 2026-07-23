@@ -95,18 +95,17 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
             Search, filter, and open details for EV charging stations in Pakistan.
           </p>
         </div>
-        <div className="sticky top-20 z-40 mx-auto -mt-7 mb-5 max-w-3xl px-3 sm:-mt-8 sm:mb-6">
-          <SearchBar
-            action={ROUTES.stations}
-            defaultValue={query}
-            floating
-            suggestions={stations}
-            className="mx-auto"
-          />
-        </div>
         <StationsToolbar query={query} sort={sort} showSearch={false} />
         <div className="mt-5 grid gap-5 sm:mt-6 sm:gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <div className="order-2 space-y-4 lg:order-1">
+            <div className="hidden lg:block">
+              <SearchBar
+                action={ROUTES.stations}
+                defaultValue={query}
+                floating
+                suggestions={stations}
+              />
+            </div>
             <div className="rounded-full bg-surface-strong px-4 py-2 text-sm font-medium text-muted">
               {stations.length} station{stations.length === 1 ? "" : "s"} found
             </div>
@@ -119,7 +118,16 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
             <Pagination currentPage={currentPage} totalPages={totalPages} query={query} sort={sort} origin={origin} />
           </div>
           <div className="order-1 lg:sticky lg:top-24 lg:order-2 lg:self-start">
-            <div className="rounded-lg border border-border bg-surface p-2 sm:p-3">
+            <div className="relative rounded-lg border border-border bg-surface p-2 sm:p-3">
+              <div className="absolute inset-x-5 top-5 z-20 lg:hidden">
+                <SearchBar
+                  action={ROUTES.stations}
+                  defaultValue={query}
+                  floating
+                  suggestions={stations}
+                  className="mx-auto"
+                />
+              </div>
               <StationMapShell stations={paginatedStations} />
             </div>
           </div>

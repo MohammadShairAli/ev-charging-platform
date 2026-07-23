@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   type CalculatorInputKey,
   type CalculatorInputs,
@@ -10,7 +10,17 @@ import {
   defaultCostInputs,
 } from "@/src/components/cost/costComparisonUtils";
 import { AppIcon } from "@/src/components/ui/AppIcon";
+import {
+  type PlannerVehicle,
+  vehicleLabel,
+} from "@/src/components/trip/VehicleSelector";
 import { ROUTES } from "@/src/lib/constants";
+import {
+  normalizeStoredCars,
+  PROFILE_STORAGE_KEY,
+  type StoredCar,
+  type StoredProfile,
+} from "@/src/lib/local-storage";
 
 type VehicleId = "petrol" | "hybrid" | "phev" | "reev" | "ev";
 
@@ -179,6 +189,12 @@ function splitDistance(distanceKm: number, electricSharePercent: number) {
   };
 }
 
+function selectedVehicleCostId(inputs: CalculatorInputs): VehicleId {
+  return inputs.vehicleKind === "PHEV"
+    ? "phev"
+    : inputs.vehicleKind === "REEV" ? "reev" : "ev";
+}
+
 function calculateCosts(inputs: CalculatorInputs): VehicleCost[] {
   const monthlyDistanceKm = toNumber(inputs.monthlyDistanceKm);
   const petrolPrice = toNumber(inputs.petrolPrice);
@@ -268,8 +284,11 @@ function calculateCosts(inputs: CalculatorInputs): VehicleCost[] {
     },
   ];
 
+  const selectedId = selectedVehicleCostId(inputs);
+
   return vehicles.map((vehicle) => ({
     ...vehicle,
+    label: vehicle.id === selectedId && inputs.vehicleName ? inputs.vehicleName : vehicle.label,
     costPerKm: monthlyDistanceKm > 0 ? vehicle.monthlyCost / monthlyDistanceKm : 0,
   }));
 }
@@ -288,6 +307,41 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
   const router = useRouter();
   const [inputs, setInputs] = useState<CalculatorInputs>(initialInputs);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [vehicleError, setVehicleError] = useState<string | null>(null);
+  const [savedCars, setSavedCars] = useState<StoredCar[]>([]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      let profile: StoredProfile = {};
+
+      try {
+        profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || "{}") as StoredProfile;
+      } catch {
+        profile = {};
+      }
+
+      const cars = normalizeStoredCars(profile.cars);
+      const savedCar = cars[0];
+      setSavedCars(cars);
+
+      if (!inputs.vehicleId && savedCar) {
+        selectVehicle({
+          id: savedCar.id,
+          brand: savedCar.make,
+          model: savedCar.model,
+          variant: savedCar.variant,
+          kind: savedCar.kind,
+          powertrain: savedCar.powertrain,
+          rangeKm: savedCar.rangeKm,
+          batteryCapacityKwh: savedCar.batteryCapacityKwh,
+        });
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  // Only hydrate the initial saved car once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function updateInput(key: CalculatorInputKey, value: string) {
     setInputs((current) => ({
@@ -299,9 +353,29 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!inputs.vehicleId) {
+      setVehicleError("Select your car before comparing costs.");
+      return;
+    }
+
     const query = costComparisonQuery(inputs);
     window.history.replaceState(null, "", `${ROUTES.costComparison}?${query}`);
     router.push(`${ROUTES.costComparison}/results?${query}`);
+  }
+
+  function selectVehicle(vehicle: PlannerVehicle) {
+    const name = vehicleLabel(vehicle);
+    const estimatedBatteryKwh = Math.max(1, Math.round((vehicle.rangeKm / 6) * 10) / 10);
+
+    setVehicleError(null);
+    setInputs((current) => ({
+      ...current,
+      vehicleId: vehicle.id,
+      vehicleName: name,
+      vehicleKind: vehicle.powertrain || (vehicle.kind === "EV" ? "EV" : "PHEV"),
+      evRangePerChargeKm: String(vehicle.rangeKm),
+      unitsPerFullCharge: String(vehicle.batteryCapacityKwh || estimatedBatteryKwh),
+    }));
   }
 
   return (
@@ -310,15 +384,65 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
         <div className="max-w-3xl">
           <p className="text-sm font-semibold text-primary">Cost comparison</p>
           <h1 className="mt-2 text-2xl font-bold tracking-normal text-foreground sm:text-4xl">
-            Petrol vs Hybrid vs PHEV vs REEV vs EV
+            Your car vs every type
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted">
-            Enter your prices, mileage, range, and charging units. Results will open on the next page.
+            Select your car and enter your monthly driving costs. Its range and battery data are filled automatically.
           </p>
         </div>
 
-        <div className="mt-6 grid gap-3 lg:grid-cols-5">
-          {primaryFields.map((field) => (
+        <div className="mt-6 max-w-2xl rounded-xl border border-border bg-background p-4">
+          <label htmlFor="cost-saved-car" className="text-sm font-semibold text-foreground">Select your car</label>
+          <div className="relative mt-2">
+            <AppIcon name="directions_car" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+            <select
+              id="cost-saved-car"
+              value={savedCars.some((car) => car.id === inputs.vehicleId) ? inputs.vehicleId : ""}
+              onChange={(event) => {
+                if (event.target.value === "add-more") {
+                  router.push(`${ROUTES.profile}?edit=cars`);
+                  return;
+                }
+
+                const car = savedCars.find((savedCar) => savedCar.id === event.target.value);
+
+                if (car) {
+                  selectVehicle({
+                    id: car.id,
+                    brand: car.make,
+                    model: car.model,
+                    variant: car.variant,
+                    kind: car.kind,
+                    powertrain: car.powertrain,
+                    rangeKm: car.rangeKm,
+                    batteryCapacityKwh: car.batteryCapacityKwh,
+                  });
+                }
+              }}
+              className="min-h-12 w-full appearance-none rounded-xl border border-border bg-secondary pl-11 pr-11 text-base text-foreground"
+            >
+              <option value="">{savedCars.length ? "Choose a saved car" : "No saved cars"}</option>
+              {savedCars.map((car) => (
+                <option key={car.id} value={car.id}>
+                  {[car.make, car.model, car.variant].filter(Boolean).join(" ")}
+                </option>
+              ))}
+              <option value="add-more">+ Add more cars</option>
+            </select>
+            <AppIcon name="expand_more" className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+          </div>
+          {vehicleError ? <p role="alert" className="mt-2 text-sm text-foreground">{vehicleError}</p> : null}
+          {inputs.vehicleId ? (
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-muted">
+              <span className="rounded-full border border-primary/30 px-3 py-1">{inputs.vehicleKind}</span>
+              <span className="rounded-full border border-border px-3 py-1">{inputs.evRangePerChargeKm} km range</span>
+              <span className="rounded-full border border-border px-3 py-1">{inputs.unitsPerFullCharge} kWh battery</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-6 grid gap-3 lg:grid-cols-3">
+          {primaryFields.slice(0, 3).map((field) => (
             <AssumptionControl
               key={field.key}
               field={field}
@@ -332,7 +456,7 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
          */}
         <div className="mt-4 grid gap-3 lg:grid-cols-2 items-start">
           <AssumptionDropdown
-            title="Kilometer per liter"
+            title="Fuel efficiency"
             icon="speed"
             isOpen={openDropdown === "fuel"}
             onToggle={() =>
@@ -353,14 +477,23 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
           </AssumptionDropdown>
 
           <AssumptionDropdown
-            title="PHEV and REEV split"
+            title="Electric assumptions"
             icon="tune"
-            isOpen={openDropdown === "plugin"}
+            isOpen={openDropdown === "vehicle"}
             onToggle={() =>
-              setOpenDropdown(openDropdown === "plugin" ? null : "plugin")
+              setOpenDropdown(openDropdown === "vehicle" ? null : "vehicle")
             }
           >
             <div className="grid gap-3 sm:grid-cols-2">
+              {primaryFields.slice(3).map((field) => (
+                <AssumptionControl
+                  key={field.key}
+                  field={field}
+                  value={inputs[field.key]}
+                  onChange={(value) => updateInput(field.key, value)}
+                  compact
+                />
+              ))}
               {plugInFields.map((field) => (
                 <AssumptionControl
                   key={field.key}
@@ -393,7 +526,8 @@ export function CostComparisonResults({ inputs }: { inputs: CalculatorInputs }) 
   const highestCost = Math.max(...costs.map((cost) => cost.monthlyCost), 1);
   const cheapest = costs.reduce((best, cost) => (cost.monthlyCost < best.monthlyCost ? cost : best), costs[0]);
   const petrolCost = costs.find((cost) => cost.id === "petrol")?.monthlyCost || 0;
-  const savingsVsPetrol = Math.max(0, petrolCost - cheapest.monthlyCost);
+  const selectedCost = costs.find((cost) => cost.id === selectedVehicleCostId(inputs));
+  const savingsVsPetrol = Math.max(0, petrolCost - (selectedCost?.monthlyCost || 0));
   const query = costComparisonQuery(inputs);
 
   return (
@@ -418,8 +552,11 @@ export function CostComparisonResults({ inputs }: { inputs: CalculatorInputs }) 
         <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
           <p className="text-sm font-semibold text-primary">Summary</p>
           <div className="mt-4 grid gap-3">
-            <ResultMetric label="Cheapest option" value={cheapest.label} />
-            {/* <ResultMetric label="Difference" value={formatCurrency(savingsVsPetrol)} /> */}
+            <ResultMetric label="Your car" value={inputs.vehicleName || selectedCost?.label || cheapest.label} />
+            <ResultMetric
+              label={savingsVsPetrol > 0 ? "Monthly saving" : "Cheapest option"}
+              value={savingsVsPetrol > 0 ? `${formatCurrency(savingsVsPetrol)} vs petrol` : cheapest.label}
+            />
             <ResultMetric label="Monthly distance" value={`${formatDecimal(toNumber(inputs.monthlyDistanceKm), 0)} km`} />
           </div>
           <details className="mt-4 rounded-lg border border-border bg-background p-3">

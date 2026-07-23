@@ -10,12 +10,16 @@ export type PlannerVehicle = {
   variant: string;
   rangeKm: number;
   kind: "EV" | "PHEV/REEV";
+  powertrain?: "EV" | "PHEV" | "REEV";
+  batteryCapacityKwh?: number;
 };
 
 type VehicleSelectorProps = {
   value: string;
   onValueChange: (value: string) => void;
   onSelect: (vehicle: PlannerVehicle) => void;
+  label?: string;
+  variant?: "search" | "dropdown";
 };
 
 const VEHICLE_FILES = [
@@ -70,6 +74,12 @@ function parseVehicles(csv: string, kind: PlannerVehicle["kind"], rangeColumn: s
       variant: record.Variant || "Standard",
       rangeKm,
       kind,
+      powertrain: kind === "EV"
+        ? "EV"
+        : record["Engine Type"]?.toUpperCase().includes("REEV") ? "REEV" : "PHEV",
+      ...(Number.parseFloat(record["Battery Capacity"] || "") > 0
+        ? { batteryCapacityKwh: Number.parseFloat(record["Battery Capacity"]) }
+        : {}),
     });
 
     return vehicles;
@@ -80,7 +90,13 @@ export function vehicleLabel(vehicle: Pick<PlannerVehicle, "brand" | "model" | "
   return [vehicle.brand, vehicle.model, vehicle.variant].filter(Boolean).join(" ");
 }
 
-export function VehicleSelector({ value, onValueChange, onSelect }: VehicleSelectorProps) {
+export function VehicleSelector({
+  value,
+  onValueChange,
+  onSelect,
+  label = "Your car",
+  variant = "search",
+}: VehicleSelectorProps) {
   const [vehicles, setVehicles] = useState<PlannerVehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -153,9 +169,46 @@ export function VehicleSelector({ value, onValueChange, onSelect }: VehicleSelec
     }
   }
 
+  if (variant === "dropdown") {
+    const selectedVehicle = vehicles.find((vehicle) => vehicleLabel(vehicle) === value);
+
+    return (
+      <div>
+        <label htmlFor="cost-vehicle" className="text-sm font-semibold text-foreground">{label}</label>
+        <div className="relative mt-2">
+          <AppIcon name="directions_car" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+          <select
+            id="cost-vehicle"
+            value={selectedVehicle?.id || ""}
+            disabled={loading || Boolean(loadError)}
+            onChange={(event) => {
+              const vehicle = vehicles.find((candidate) => candidate.id === event.target.value);
+
+              if (vehicle) {
+                choose(vehicle);
+              } else {
+                onValueChange("");
+              }
+            }}
+            className="min-h-12 w-full appearance-none rounded-xl border border-border bg-secondary pl-11 pr-11 text-base text-foreground disabled:cursor-wait disabled:opacity-70"
+          >
+            <option value="">{loading ? "Loading cars..." : "Choose a car"}</option>
+            {vehicles.map((vehicle) => (
+              <option key={vehicle.id} value={vehicle.id}>
+                {vehicleLabel(vehicle)} · {vehicle.rangeKm} km
+              </option>
+            ))}
+          </select>
+          <AppIcon name="expand_more" className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+        </div>
+        {loadError ? <p role="alert" className="mt-2 text-xs leading-5 text-muted">{loadError}</p> : null}
+      </div>
+    );
+  }
+
   return (
     <div>
-      <label htmlFor="trip-vehicle" className="text-sm font-semibold text-foreground">Your car</label>
+      <label htmlFor="trip-vehicle" className="text-sm font-semibold text-foreground">{label}</label>
       <div className="relative mt-2">
         <AppIcon name="directions_car" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
         <input

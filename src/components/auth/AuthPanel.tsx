@@ -1,10 +1,18 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, MouseEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppIcon } from "@/src/components/ui/AppIcon";
+import { SavedCarsEditor } from "@/src/components/vehicle/SavedCarsEditor";
 import { AUTH_COOKIE_NAME, AUTH_STORAGE_KEY, LEGACY_AUTH_COOKIE_NAME, ROUTES } from "@/src/lib/constants";
+import {
+  normalizeStoredCars,
+  PENDING_SIGNUP_CARS_KEY,
+  PROFILE_STORAGE_KEY,
+  type StoredCar,
+  type StoredProfile,
+} from "@/src/lib/local-storage";
 
 type Mode = "login" | "signup";
 
@@ -17,6 +25,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
   const [image, setImage] = useState<string | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
   const [resending, setResending] = useState(false);
+  const [cars, setCars] = useState<StoredCar[]>([]);
 
   function enterGuest() {
     document.cookie = `${LEGACY_AUTH_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
@@ -63,8 +72,13 @@ export function AuthPanel({ mode }: { mode: Mode }) {
         }
 
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ mode: "auth", session: data.session }));
+        persistCars(normalizeStoredCars(data.session?.user?.user_metadata?.cars));
         router.push(ROUTES.home);
         return;
+      }
+
+      if (!cars.length) {
+        throw new Error("Add at least one car before creating your account.");
       }
 
       const response = await fetch("/api/auth/signup", {
@@ -77,6 +91,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
           email,
           password,
           image,
+          cars,
           redirectTo: `${window.location.origin}${ROUTES.authVerify}`,
         }),
       });
@@ -85,6 +100,8 @@ export function AuthPanel({ mode }: { mode: Mode }) {
       if (!response.ok) {
         throw new Error(data.message || "Signup failed.");
       }
+
+      persistCars(cars);
 
       if (data.session) {
         document.cookie = `${LEGACY_AUTH_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
@@ -139,6 +156,22 @@ export function AuthPanel({ mode }: { mode: Mode }) {
     }
   }
 
+  function prepareGoogleSignup(event: MouseEvent<HTMLAnchorElement>) {
+    if (mode !== "signup") {
+      sessionStorage.removeItem(PENDING_SIGNUP_CARS_KEY);
+      return;
+    }
+
+    if (!cars.length) {
+      event.preventDefault();
+      setError("Add at least one car before creating your account.");
+      return;
+    }
+
+    persistCars(cars);
+    sessionStorage.setItem(PENDING_SIGNUP_CARS_KEY, JSON.stringify(cars));
+  }
+
   return (
     <section className="mx-auto w-full max-w-xl rounded-lg border border-border bg-surface p-4 text-foreground sm:p-6">
       {verificationSent ? (
@@ -186,6 +219,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
               />
               <p className="mt-1 text-xs text-muted">Optional.</p>
             </div>
+            <SavedCarsEditor cars={cars} onChange={setCars} />
           </>
         ) : null}
 
@@ -238,6 +272,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
       <div className="mt-4 grid gap-3">
         <a
           href="/api/auth/google"
+          onClick={prepareGoogleSignup}
           className="inline-flex min-h-12 items-center justify-center gap-3 rounded border border-[#dadce0] bg-white px-4 text-sm font-medium text-[#3c4043] shadow-sm transition hover:bg-[#f8fafd] hover:shadow disabled:opacity-60"
         >
           <GoogleIcon />
@@ -253,6 +288,33 @@ export function AuthPanel({ mode }: { mode: Mode }) {
       </div>
     </section>
   );
+}
+
+function persistCars(cars: StoredCar[]) {
+  if (!cars.length) {
+    return;
+  }
+
+  let profile: StoredProfile = {};
+
+  try {
+    profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || "{}") as StoredProfile;
+  } catch {
+    profile = {};
+  }
+
+  const firstCar = cars[0];
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify({
+    ...profile,
+    cars,
+    car: {
+      make: firstCar.make,
+      model: firstCar.model,
+      variant: firstCar.variant,
+      kind: firstCar.kind,
+      rangeKm: firstCar.rangeKm,
+    },
+  }));
 }
 
 function GoogleIcon() {

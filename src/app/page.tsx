@@ -61,10 +61,6 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="sticky top-20 z-40 mx-auto hidden max-w-3xl px-6 pt-6 sm:block lg:px-8">
-          <SearchBar floating suggestions={stations} className="mx-auto" />
-        </div>
-
         <div className="mx-auto grid max-w-7xl items-start gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12 lg:px-8 lg:py-20">
           <div className="relative z-10 order-2 lg:order-1">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-primary">
@@ -78,7 +74,11 @@ export default async function HomePage() {
               Find chargers, plan range-aware journeys, compare ownership costs, and discover the right electric vehicle in one place.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 hidden lg:block">
+              <SearchBar floating suggestions={stations} />
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3 lg:mt-4">
               <ButtonLink href={ROUTES.stations}>Find a charger</ButtonLink>
               <ButtonLink href={ROUTES.planTrip} variant="secondary">Plan my trip</ButtonLink>
             </div>
@@ -90,7 +90,10 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="order-1 hidden min-w-0 sm:block lg:order-2">
+          <div className="relative order-1 hidden min-w-0 sm:block lg:order-2">
+            <div className="absolute inset-x-3 top-3 z-20 lg:hidden">
+              <SearchBar floating suggestions={stations} className="mx-auto" />
+            </div>
             <ClosestStationPanel
               variant="desktop"
               mapClassName="min-h-[24rem] lg:min-h-[28rem]"

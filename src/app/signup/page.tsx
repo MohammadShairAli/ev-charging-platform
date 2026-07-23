@@ -8,7 +8,7 @@ export default function SignupPage() {
           <p className="text-sm font-semibold text-primary">EV Charging Pakistan</p>
           <h1 className="mt-3 text-5xl font-bold leading-tight text-foreground">Create your driver profile</h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted">
-            Add your name, email, and optional image. We will send verification immediately after signup.
+            Add your details and one or more cars. You can manage your saved cars later from your profile.
           </p>
         </section>
         <AuthPanel mode="signup" />

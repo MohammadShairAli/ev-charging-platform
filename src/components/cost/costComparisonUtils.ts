@@ -9,7 +9,10 @@ export type CalculatorInputKey =
   | "phevPetrolAverageKmL"
   | "reevGeneratorAverageKmL"
   | "phevElectricShare"
-  | "reevElectricShare";
+  | "reevElectricShare"
+  | "vehicleId"
+  | "vehicleName"
+  | "vehicleKind";
 
 export type CalculatorInputs = Record<CalculatorInputKey, string>;
 
@@ -25,6 +28,9 @@ export const defaultCostInputs: CalculatorInputs = {
   reevGeneratorAverageKmL: "20",
   phevElectricShare: "60",
   reevElectricShare: "80",
+  vehicleId: "",
+  vehicleName: "",
+  vehicleKind: "",
 };
 
 const inputKeys = Object.keys(defaultCostInputs) as CalculatorInputKey[];

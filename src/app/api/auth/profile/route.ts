@@ -1,5 +1,6 @@
 import { updateAuthProfile } from "@/src/services/auth.service";
 import { uploadProfileImage } from "@/src/services/cloudinary.service";
+import { MAX_SAVED_CARS, normalizeStoredCars } from "@/src/lib/local-storage";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function PUT(request: Request) {
       email?: string;
       currentEmail?: string;
       image?: string | null;
+      cars?: unknown;
       redirectTo?: string;
     };
 
@@ -27,6 +29,14 @@ export async function PUT(request: Request) {
     const nextEmail = body.email?.trim();
     const currentEmail = body.currentEmail?.trim();
     const emailChanged = Boolean(nextEmail && currentEmail && nextEmail.toLowerCase() !== currentEmail.toLowerCase());
+    const cars = normalizeStoredCars(body.cars);
+    if (cars.length > MAX_SAVED_CARS) {
+      return Response.json(
+        { message: `You can save up to ${MAX_SAVED_CARS} cars. Remove one to add another.` },
+        { status: 400 },
+      );
+    }
+
     const avatarUrl = await uploadProfileImage(body.image);
     const user = await updateAuthProfile({
       accessToken,
@@ -35,6 +45,7 @@ export async function PUT(request: Request) {
       phone: body.phone,
       email: emailChanged ? nextEmail : undefined,
       avatarUrl,
+      cars,
       redirectTo: body.redirectTo,
     });
 

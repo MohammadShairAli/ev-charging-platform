@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AUTH_COOKIE_NAME, AUTH_STORAGE_KEY, LEGACY_AUTH_COOKIE_NAME, ROUTES } from "@/src/lib/constants";
+import {
+  normalizeStoredCars,
+  PENDING_SIGNUP_CARS_KEY,
+  PROFILE_STORAGE_KEY,
+  type StoredCar,
+  type StoredProfile,
+} from "@/src/lib/local-storage";
 
 export function AuthCallback() {
   const router = useRouter();
@@ -34,6 +41,31 @@ export function AuthCallback() {
               return;
             }
 
+            let user = data.user;
+            let serverCars = normalizeStoredCars(user?.user_metadata?.cars);
+            const pendingCars = readPendingCars();
+
+            if (!serverCars.length && pendingCars.length) {
+              const carsResponse = await fetch("/api/auth/cars", {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ cars: pendingCars }),
+              });
+              const carsData = await carsResponse.json();
+
+              if (!carsResponse.ok) {
+                throw new Error(carsData.message || "Your account was created, but its cars could not be saved.");
+              }
+
+              user = carsData.user || user;
+              serverCars = normalizeStoredCars(user?.user_metadata?.cars);
+            }
+
+            sessionStorage.removeItem(PENDING_SIGNUP_CARS_KEY);
+            persistCars(serverCars.length ? serverCars : pendingCars);
             document.cookie = `${LEGACY_AUTH_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
             document.cookie = `${AUTH_COOKIE_NAME}=auth; path=/; samesite=lax`;
             localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
@@ -43,7 +75,7 @@ export function AuthCallback() {
                 refresh_token: refreshToken,
                 token_type: hash.get("token_type"),
                 expires_in: hash.get("expires_in"),
-                user: data.user,
+                user,
               },
             }));
             router.replace(ROUTES.home);
@@ -74,4 +106,40 @@ export function AuthCallback() {
       </section>
     </main>
   );
+}
+
+function persistCars(cars: StoredCar[]) {
+  if (!cars.length) {
+    return;
+  }
+
+  let profile: StoredProfile = {};
+
+  try {
+    profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || "{}") as StoredProfile;
+  } catch {
+    profile = {};
+  }
+
+  const firstCar = cars[0];
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify({
+    ...profile,
+    cars,
+    car: {
+      make: firstCar.make,
+      model: firstCar.model,
+      variant: firstCar.variant,
+      kind: firstCar.kind,
+      rangeKm: firstCar.rangeKm,
+    },
+  }));
+}
+
+function readPendingCars() {
+  try {
+    return normalizeStoredCars(JSON.parse(sessionStorage.getItem(PENDING_SIGNUP_CARS_KEY) || "[]"));
+  } catch {
+    sessionStorage.removeItem(PENDING_SIGNUP_CARS_KEY);
+    return [];
+  }
 }

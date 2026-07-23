@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LogoutButton } from "@/src/components/auth/LogoutButton";
 import { AppIcon } from "@/src/components/ui/AppIcon";
+import { SavedCarsEditor } from "@/src/components/vehicle/SavedCarsEditor";
 import { AUTH_STORAGE_KEY, ROUTES } from "@/src/lib/constants";
+import {
+  normalizeStoredCars,
+  PROFILE_STORAGE_KEY,
+  type StoredCar,
+  type StoredProfile,
+} from "@/src/lib/local-storage";
 
 type StoredAuth = {
   mode?: "guest" | "auth";
@@ -17,6 +24,7 @@ type StoredAuth = {
         full_name?: string;
         phone?: string;
         avatar_data_url?: string;
+        cars?: StoredCar[];
       };
     };
     access_token?: string;
@@ -25,13 +33,16 @@ type StoredAuth = {
 
 export function ProfilePanel() {
   const [auth, setAuth] = useState<StoredAuth | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<"profile" | "cars" | null>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       try {
         const storedAuth = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null") as StoredAuth | null;
         setAuth(storedAuth);
+        if (new URLSearchParams(window.location.search).get("edit") === "cars") {
+          setEditing("cars");
+        }
 
         if (storedAuth?.mode === "auth" && storedAuth.session?.access_token && !storedAuth.session.user) {
           void refreshStoredUser(storedAuth).then(setAuth);
@@ -49,6 +60,11 @@ export function ProfilePanel() {
   const email = auth?.session?.user?.email;
   const avatar = metadata?.avatar_data_url;
   const initial = (metadata?.first_name || name || email || "U").trim().charAt(0).toUpperCase() || "U";
+
+  function finishEditing() {
+    setEditing(null);
+    window.history.replaceState(null, "", ROUTES.profile);
+  }
 
   if (auth?.mode === "guest") {
     return (
@@ -107,18 +123,34 @@ export function ProfilePanel() {
       </div>
 
       {auth ? (
-        editing ? (
+        <div className="mt-5 grid gap-4">
+          {editing === "profile" ? (
           <EditableProfileForm
             auth={auth}
-            onCancel={() => setEditing(false)}
             onSaved={(nextAuth) => {
               setAuth(nextAuth);
-              setEditing(false);
+              finishEditing();
             }}
           />
-        ) : (
-          <ReadOnlyProfileDetails auth={auth} onEdit={() => setEditing(true)} />
-        )
+          ) : (
+            <ReadOnlyProfileDetails auth={auth} onEdit={() => setEditing("profile")} />
+          )}
+
+          {editing === "cars" ? (
+            <EditableCarsForm
+              auth={auth}
+              onSaved={(nextAuth) => {
+                setAuth(nextAuth);
+                finishEditing();
+              }}
+            />
+          ) : (
+            <SavedCarsSummary
+              cars={normalizeStoredCars(auth.session?.user?.user_metadata?.cars)}
+              onEdit={() => setEditing("cars")}
+            />
+          )}
+        </div>
       ) : null}
 
       <div className="mt-5 border-t border-border pt-4">
@@ -158,6 +190,7 @@ async function refreshStoredUser(auth: StoredAuth) {
 }
 
 function ReadOnlyProfileDetails({ auth, onEdit }: { auth: StoredAuth; onEdit: () => void }) {
+  const [collapsed, setCollapsed] = useState(true);
   const metadata = auth.session?.user?.user_metadata;
   const firstName = metadata?.first_name || "-";
   const lastName = metadata?.last_name || "-";
@@ -165,25 +198,71 @@ function ReadOnlyProfileDetails({ auth, onEdit }: { auth: StoredAuth; onEdit: ()
   const email = auth.session?.user?.email || "-";
 
   return (
-    <section className="mt-5 border-t border-border pt-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold text-foreground">Account details</h3>
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label="Edit profile"
-          className="grid h-10 w-10 place-items-center rounded-full border border-border bg-secondary text-primary transition hover:border-primary"
-        >
-          <AppIcon name="edit" className="h-5 w-5" />
-        </button>
+    <section className="rounded-lg border border-border bg-background p-4">
+      <div className={`${collapsed ? "" : "mb-4"} flex items-center justify-between gap-3`}>
+        <div className="flex items-center gap-2">
+          <AppIcon name="manage_accounts" className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold text-foreground">Profile settings</h3>
+        </div>
+        <CollapseButton
+          collapsed={collapsed}
+          onToggle={() => {
+            if (collapsed) {
+              onEdit();
+            } else {
+              setCollapsed(true);
+            }
+          }}
+          label="profile settings"
+        />
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-2">
+      <dl className={collapsed ? "hidden" : "grid gap-3 sm:grid-cols-2"}>
         <ProfileDetail label="First name" value={firstName} />
         <ProfileDetail label="Last name" value={lastName} />
         <ProfileDetail label="Phone number" value={phone} />
         <ProfileDetail label="Email" value={email} />
       </dl>
+    </section>
+  );
+}
+
+function SavedCarsSummary({ cars, onEdit }: { cars: StoredCar[]; onEdit: () => void }) {
+  const [collapsed, setCollapsed] = useState(true);
+
+  return (
+    <section className="rounded-lg border border-border bg-background p-4">
+      <div className={`${collapsed ? "" : "mb-4"} flex items-center justify-between gap-3`}>
+        <div className="flex items-center gap-2">
+          <AppIcon name="electric_car" className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold text-foreground">Your cars</h3>
+        </div>
+        <CollapseButton
+          collapsed={collapsed}
+          onToggle={() => {
+            if (collapsed) {
+              onEdit();
+            } else {
+              setCollapsed(true);
+            }
+          }}
+          label="cars"
+        />
+      </div>
+      {!collapsed && cars.length ? (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {cars.map((car) => (
+            <li key={car.id} className="rounded-lg border border-border bg-background px-3 py-3">
+              <p className="truncate text-sm font-bold text-foreground">
+                {[car.make, car.model, car.variant].filter(Boolean).join(" ")}
+              </p>
+              <p className="mt-1 text-xs text-muted">{car.kind} · {car.rangeKm} km</p>
+            </li>
+          ))}
+        </ul>
+      ) : !collapsed ? (
+        <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted">No cars saved.</p>
+      ) : null}
     </section>
   );
 }
@@ -199,11 +278,9 @@ function ProfileDetail({ label, value }: { label: string; value: string }) {
 
 function EditableProfileForm({
   auth,
-  onCancel,
   onSaved,
 }: {
   auth: StoredAuth;
-  onCancel: () => void;
   onSaved: (auth: StoredAuth) => void;
 }) {
   const metadata = auth.session?.user?.user_metadata;
@@ -216,9 +293,15 @@ function EditableProfileForm({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const currentAvatar = metadata?.avatar_data_url || "";
   const avatarPreview = image || currentAvatar;
   const previewInitial = (firstName || metadata?.full_name || email || "U").trim().charAt(0).toUpperCase() || "U";
+  const hasChanges = firstName !== (metadata?.first_name || "")
+    || lastName !== (metadata?.last_name || "")
+    || phone !== (metadata?.phone || "")
+    || email !== (auth.session?.user?.email || "")
+    || image !== null;
 
   async function handleImage(file?: File) {
     if (!file) {
@@ -237,6 +320,11 @@ function EditableProfileForm({
 
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!hasChanges) {
+      return;
+    }
+
     setSaving(true);
     setMessage(null);
     setError(null);
@@ -260,6 +348,7 @@ function EditableProfileForm({
           phone,
           email,
           image,
+          cars: normalizeStoredCars(metadata?.cars),
           currentEmail: auth.session?.user?.email,
           redirectTo: `${window.location.origin}${ROUTES.authVerify}`,
         }),
@@ -301,7 +390,26 @@ function EditableProfileForm({
   }
 
   return (
-    <form className="mt-5 grid gap-4 border-t border-border pt-5" onSubmit={saveProfile}>
+    <form className="grid gap-4 rounded-lg border border-primary/40 bg-background p-4" onSubmit={saveProfile}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 ">
+          <AppIcon  name="manage_accounts" className="h-5 w-5 text-primary cursor-pointer" />
+          <h3 className="text-lg font-bold text-foreground">Edit profile settings</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          {hasChanges && !collapsed ? (
+            <button
+              type="submit"
+              disabled={saving}
+              className="min-h-10 rounded-lg bg-primary px-4 text-sm font-bold text-secondary transition hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save changes"}
+            </button>
+          ) : null}
+          <CollapseButton collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} label="profile editor" />
+        </div>
+      </div>
+      <fieldset className={collapsed ? "hidden" : "grid gap-4"} disabled={saving}>
       <div className="grid gap-3 sm:grid-cols-2">
         <ProfileField label="First name" value={firstName} onChange={setFirstName} required />
         <ProfileField label="Last name" value={lastName} onChange={setLastName} required />
@@ -363,24 +471,163 @@ function EditableProfileForm({
       {message ? <p className="rounded-lg border border-primary/40 bg-background p-3 text-sm text-foreground">{message}</p> : null}
       {error ? <p role="alert" className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">{error}</p> : null}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="min-h-12 rounded-lg bg-primary px-4 text-sm font-bold text-secondary transition hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60"
-        >
-          {saving ? "Saving..." : "Save profile"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={saving}
-          className="min-h-12 rounded-lg border border-border bg-secondary px-4 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-wait disabled:opacity-60"
-        >
-          Cancel
-        </button>
-      </div>
+      </fieldset>
     </form>
+  );
+}
+
+function EditableCarsForm({
+  auth,
+  onSaved,
+}: {
+  auth: StoredAuth;
+  onSaved: (auth: StoredAuth) => void;
+}) {
+  const initialCars = normalizeStoredCars(auth.session?.user?.user_metadata?.cars);
+  const [cars, setCars] = useState<StoredCar[]>(initialCars);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const hasChanges = JSON.stringify(cars) !== JSON.stringify(initialCars);
+
+  async function saveCars(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!hasChanges) {
+      return;
+    }
+
+    setSaving(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const token = auth.session?.access_token;
+
+      if (!token) {
+        throw new Error("Please login again before editing your cars.");
+      }
+
+      const response = await fetch("/api/auth/cars", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ cars }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Cars could not be saved.");
+      }
+
+      const nextAuth: StoredAuth = {
+        ...auth,
+        session: {
+          ...auth.session,
+          user: {
+            ...auth.session?.user,
+            ...data.user,
+            user_metadata: {
+              ...auth.session?.user?.user_metadata,
+              ...data.user?.user_metadata,
+              cars,
+            },
+          },
+        },
+      };
+
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
+      persistProfileCars(cars);
+      setMessage("Cars saved.");
+      onSaved(nextAuth);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Cars could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-4 rounded-lg border border-primary/40 bg-background p-4" onSubmit={saveCars}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <AppIcon name="electric_car" className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold text-foreground">Edit your cars</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          {hasChanges && !collapsed ? (
+            <button
+              type="submit"
+              disabled={saving}
+              className="min-h-10 rounded-lg bg-primary px-4 text-sm font-bold text-secondary transition hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save changes"}
+            </button>
+          ) : null}
+          <CollapseButton collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} label="car editor" />
+        </div>
+      </div>
+
+      <fieldset className={collapsed ? "hidden" : "grid gap-4"} disabled={saving}>
+      <SavedCarsEditor cars={cars} onChange={setCars} />
+
+      {message ? <p className="rounded-lg border border-primary/40 bg-secondary p-3 text-sm text-foreground">{message}</p> : null}
+      {error ? <p role="alert" className="rounded-lg border border-border bg-secondary p-3 text-sm text-foreground">{error}</p> : null}
+
+      </fieldset>
+    </form>
+  );
+}
+
+function persistProfileCars(cars: StoredCar[]) {
+  let profile: StoredProfile = {};
+
+  try {
+    profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || "{}") as StoredProfile;
+  } catch {
+    profile = {};
+  }
+
+  const firstCar = cars[0];
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify({
+    ...profile,
+    cars,
+    car: firstCar
+      ? {
+          make: firstCar.make,
+          model: firstCar.model,
+          variant: firstCar.variant,
+          kind: firstCar.kind,
+          rangeKm: firstCar.rangeKm,
+        }
+      : undefined,
+  }));
+}
+
+function CollapseButton({
+  collapsed,
+  onToggle,
+  label,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={`${collapsed ? "Expand" : "Minimize"} ${label}`}
+      aria-expanded={!collapsed}
+      className="grid h-10 w-10 place-items-center rounded-full border border-border bg-secondary text-primary transition hover:border-primary"
+    >
+      <span className="text-2xl font-medium leading-none" aria-hidden="true">
+        {collapsed ? "+" : "−"}
+      </span>
+    </button>
   );
 }
 

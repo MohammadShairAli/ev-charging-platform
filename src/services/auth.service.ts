@@ -1,4 +1,5 @@
 import { appConfig, hasSupabaseConfig } from "@/src/lib/config";
+import type { StoredCar } from "@/src/lib/local-storage";
 
 type SupabaseAuthSession = {
   access_token: string;
@@ -31,6 +32,7 @@ type SignUpInput = {
   email: string;
   password: string;
   avatarUrl?: string | null;
+  cars: StoredCar[];
   redirectTo: string;
 };
 
@@ -56,6 +58,7 @@ type UpdateProfileInput = {
   phone: string;
   email?: string;
   avatarUrl?: string | null;
+  cars?: StoredCar[];
   redirectTo: string;
 };
 
@@ -135,6 +138,7 @@ export async function createSignupVerificationLink(input: SignUpInput) {
         phone: input.phone,
         full_name: `${input.firstName} ${input.lastName}`.trim(),
         avatar_data_url: input.avatarUrl || null,
+        cars: input.cars,
       },
       redirect_to: input.redirectTo,
       options: {
@@ -284,6 +288,7 @@ export async function updateAuthProfile(input: UpdateProfileInput) {
       phone: input.phone,
       full_name: `${input.firstName} ${input.lastName}`.trim(),
       ...(input.avatarUrl ? { avatar_data_url: input.avatarUrl } : {}),
+      ...(input.cars ? { cars: input.cars } : {}),
     },
   };
 
@@ -306,6 +311,30 @@ export async function updateAuthProfile(input: UpdateProfileInput) {
 
   if (!response.ok) {
     throw new Error(data?.msg || data?.message || "Profile update failed.");
+  }
+
+  return data;
+}
+
+export async function updateAuthCars(accessToken: string, cars: StoredCar[]) {
+  requireAuthConfig();
+
+  const response = await fetch(new URL("/auth/v1/user", appConfig.supabase.url), {
+    method: "PUT",
+    headers: {
+      apikey: appConfig.supabase.anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify({
+      data: { cars },
+    }),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data?.msg || data?.message || "Cars could not be saved.");
   }
 
   return data;

@@ -1,18 +1,21 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { GoogleMap } from "@/src/components/map/GoogleMap";
 import {
   type PlannerVehicle,
-  VehicleSelector,
   vehicleLabel,
 } from "@/src/components/trip/VehicleSelector";
 import { ButtonLink } from "@/src/components/ui/ButtonLink";
 import { AppIcon } from "@/src/components/ui/AppIcon";
 import { appConfig } from "@/src/lib/config";
+import { ROUTES } from "@/src/lib/constants";
 import {
+  normalizeStoredCars,
   PROFILE_STORAGE_KEY,
   TRIP_DRAFT_STORAGE_KEY,
+  type StoredCar,
   type StoredProfile,
   type StoredTripDraft,
 } from "@/src/lib/local-storage";
@@ -842,12 +845,13 @@ function LocationAutocompleteInput({
 }
 
 export function TripPlanner({ stations }: TripPlannerProps) {
+  const router = useRouter();
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [startLocation, setStartLocation] = useState<LatLngLiteral | null>(null);
   const [endLocation, setEndLocation] = useState<LatLngLiteral | null>(null);
-  const [vehicleQuery, setVehicleQuery] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState<PlannerVehicle | null>(null);
+  const [savedCars, setSavedCars] = useState<StoredCar[]>([]);
   const [rangeKm, setRangeKm] = useState("");
   const [currentChargePercent, setCurrentChargePercent] = useState("100");
   const [editingRange, setEditingRange] = useState(false);
@@ -863,8 +867,11 @@ export function TripPlanner({ stations }: TripPlannerProps) {
     const timeout = window.setTimeout(() => {
       const profile = readStoredProfile();
       const draft = readTripDraft();
-      const savedRange = profile.car?.rangeKm;
+      const savedAccountCar = profile.cars?.[0];
+      const savedCar = savedAccountCar || profile.car;
+      const savedRange = savedCar?.rangeKm;
 
+      setSavedCars(normalizeStoredCars(profile.cars));
       setStart(draft.start || "");
       setEnd(draft.end || "");
       setStartLocation(null);
@@ -876,17 +883,16 @@ export function TripPlanner({ stations }: TripPlannerProps) {
 
       if (savedRange && savedRange > 0) {
         setRangeKm(String(savedRange));
-        if (profile.car?.make && profile.car.model) {
+        if (savedCar?.make && savedCar.model) {
           const savedVehicle: PlannerVehicle = {
-            id: `saved-${profile.car.make}-${profile.car.model}-${profile.car.variant || ""}`,
-            brand: profile.car.make,
-            model: profile.car.model,
-            variant: profile.car.variant || "",
-            kind: profile.car.kind || "EV",
+            id: savedAccountCar?.id || `saved-${savedCar.make}-${savedCar.model}-${savedCar.variant || ""}`,
+            brand: savedCar.make,
+            model: savedCar.model,
+            variant: savedCar.variant || "",
+            kind: savedCar.kind || "EV",
             rangeKm: savedRange,
           };
           setSelectedVehicle(savedVehicle);
-          setVehicleQuery(vehicleLabel(savedVehicle));
         }
       } else if (draft.rangeKm && draft.rangeKm > 0) {
         setRangeKm(String(draft.rangeKm));
@@ -1013,7 +1019,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
     }
 
     if (!selectedVehicle) {
-      setError("Search for your car and select the exact model or variant from the list.");
+      setError("Select your car before planning the route.");
       return;
     }
 
@@ -1375,22 +1381,52 @@ export function TripPlanner({ stations }: TripPlannerProps) {
 
 
           <div className="lg:col-span-2">
-            <VehicleSelector
-              value={vehicleQuery}
-              onValueChange={(value) => {
-                setVehicleQuery(value);
-                setSelectedVehicle(null);
-                setRangeKm("");
-                setEditingRange(false);
-              }}
-              onSelect={(vehicle) => {
-                setSelectedVehicle(vehicle);
-                setVehicleQuery(vehicleLabel(vehicle));
-                setRangeKm(String(vehicle.rangeKm));
-                setEditingRange(false);
-                setError(null);
-              }}
-            />
+            <label htmlFor="trip-saved-car" className="text-sm font-semibold text-foreground">Your car</label>
+            <div className="relative mt-2">
+              <AppIcon name="directions_car" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+              <select
+                id="trip-saved-car"
+                value={savedCars.some((car) => car.id === selectedVehicle?.id) ? selectedVehicle?.id : ""}
+                onChange={(event) => {
+                  if (event.target.value === "add-more") {
+                    router.push(`${ROUTES.profile}?edit=cars`);
+                    return;
+                  }
+
+                  const car = savedCars.find((savedCar) => savedCar.id === event.target.value);
+
+                  if (car) {
+                    setSelectedVehicle({
+                      id: car.id,
+                      brand: car.make,
+                      model: car.model,
+                      variant: car.variant,
+                      kind: car.kind,
+                      powertrain: car.powertrain,
+                      rangeKm: car.rangeKm,
+                      batteryCapacityKwh: car.batteryCapacityKwh,
+                    });
+                    setRangeKm(String(car.rangeKm));
+                    setEditingRange(false);
+                    setError(null);
+                  } else {
+                    setSelectedVehicle(null);
+                    setRangeKm("");
+                    setEditingRange(false);
+                  }
+                }}
+                className="min-h-12 w-full appearance-none rounded-xl border border-border bg-secondary pl-11 pr-11 text-base text-foreground"
+              >
+                <option value="">{savedCars.length ? "Choose a saved car" : "No saved cars"}</option>
+                {savedCars.map((car) => (
+                  <option key={car.id} value={car.id}>
+                    {[car.make, car.model, car.variant].filter(Boolean).join(" ")}
+                  </option>
+                ))}
+                <option value="add-more">+ Add more cars</option>
+              </select>
+              <AppIcon name="expand_more" className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+            </div>
           </div>
 
           {selectedVehicle ? (
