@@ -13,10 +13,17 @@ function normalizeStation(row: Station): Station {
   };
 }
 
-function applyFilters(stations: Station[], filters: StationFilters = {}) {
+function applyFilters(
+  stations: Station[],
+  filters: StationFilters = {},
+  options: { googleValidated?: boolean } = {},
+) {
   const query = filters.q?.trim().toLowerCase();
 
-  let results = stations.filter(isLikelyChargingStation).filter(isStationInPakistan).map((station) => {
+  let results = stations
+    .filter((station) => options.googleValidated || isLikelyChargingStation(station))
+    .filter(isStationInPakistan)
+    .map((station) => {
     if (!filters.origin || station.latitude === null || station.longitude === null) {
       return station;
     }
@@ -28,7 +35,7 @@ function applyFilters(stations: Station[], filters: StationFilters = {}) {
         lng: station.longitude,
       }),
     };
-  });
+    });
 
   if (query) {
     results = results.filter((station) =>
@@ -72,6 +79,36 @@ function mergeStations(primary: Station[], secondary: Station[]) {
   return merged;
 }
 
+async function searchGoogleStationsAroundQuery(query: string) {
+  try {
+    const origin = await googleService.geocodeLocation(query);
+
+    if (!origin) {
+      return {
+        stations: await googleService.searchEvStations(query),
+        origin: undefined,
+      };
+    }
+
+    const [nearbyResult, textResult] = await Promise.allSettled([
+      googleService.searchNearbyEvStations(origin),
+      googleService.searchEvStations(query),
+    ]);
+    const nearbyStations = nearbyResult.status === "fulfilled" ? nearbyResult.value : [];
+    const textStations = textResult.status === "fulfilled" ? textResult.value : [];
+
+    return {
+      stations: mergeStations(nearbyStations, textStations),
+      origin,
+    };
+  } catch {
+    return {
+      stations: await googleService.searchEvStations(query),
+      origin: undefined,
+    };
+  }
+}
+
 export class StationsService {
   async list(filters: StationFilters = {}) {
     const params: Record<string, string> = {
@@ -94,23 +131,60 @@ export class StationsService {
           if (filters.origin) {
             try {
               const nearbyGoogleStations = await googleService.searchNearbyEvStations(filters.origin);
-              return applyFilters(mergeStations(databaseStations, nearbyGoogleStations), filters);
+              return applyFilters(
+                mergeStations(databaseStations, nearbyGoogleStations),
+                { ...filters, q: undefined },
+                { googleValidated: true },
+              );
             } catch {
               return applyFilters(databaseStations, filters);
             }
           }
 
-          return applyFilters(databaseStations, filters);
+          const filteredDatabaseStations = applyFilters(databaseStations, filters);
+
+          if (filters.q?.trim()) {
+            try {
+              const nearbyResult = await searchGoogleStationsAroundQuery(filters.q);
+              return applyFilters(
+                mergeStations(filteredDatabaseStations, nearbyResult.stations),
+                {
+                  ...filters,
+                  q: undefined,
+                  origin: nearbyResult.origin,
+                },
+                { googleValidated: true },
+              );
+            } catch {
+              if (filteredDatabaseStations.length) {
+                return filteredDatabaseStations;
+              }
+            }
+          } else if (filteredDatabaseStations.length) {
+            return filteredDatabaseStations;
+          }
         }
       } catch {
         // Google remains a live source when the database API is unavailable.
       }
     }
 
-    const googleStations = filters.origin
-      ? await googleService.searchNearbyEvStations(filters.origin)
-      : await googleService.searchEvStations(filters.q || "Pakistan");
-    return applyFilters(googleStations, filters);
+    if (filters.origin) {
+      const googleStations = await googleService.searchNearbyEvStations(filters.origin);
+      return applyFilters(googleStations, { ...filters, q: undefined }, { googleValidated: true });
+    }
+
+    if (filters.q?.trim()) {
+      const result = await searchGoogleStationsAroundQuery(filters.q);
+      return applyFilters(result.stations, {
+        ...filters,
+        q: undefined,
+        origin: result.origin,
+      }, { googleValidated: true });
+    }
+
+    const googleStations = await googleService.searchEvStations("Pakistan");
+    return applyFilters(googleStations, filters, { googleValidated: true });
   }
 
   async findById(id: string) {

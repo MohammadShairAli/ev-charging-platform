@@ -68,7 +68,7 @@ export function StationsToolbar({ query, sort, showSearch = true }: StationsTool
   }
 
   useEffect(() => {
-    if (sort !== "distance" || hasLocation || !navigator.geolocation) {
+    if (sort !== "distance" || hasLocation || query || !navigator.geolocation) {
       return;
     }
 
@@ -86,7 +86,7 @@ export function StationsToolbar({ query, sort, showSearch = true }: StationsTool
         timeout: 8000,
       },
     );
-  }, [hasLocation, pushSort, sort]);
+  }, [hasLocation, pushSort, query, sort]);
 
   return (
     <div

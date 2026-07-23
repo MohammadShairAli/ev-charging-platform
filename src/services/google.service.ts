@@ -45,6 +45,15 @@ type PlacesAutocompleteResponse = {
   status?: string;
 };
 
+type GeocodingResponse = {
+  results?: Array<{
+    geometry?: {
+      location?: LatLngLiteral;
+    };
+  }>;
+  status?: string;
+};
+
 type DirectionsResponse = {
   routes?: Array<{
     overview_polyline?: { points?: string };
@@ -81,12 +90,14 @@ type GooglePlaceAmenities = {
 };
 
 type GoogleNearbyPlace = {
+  id?: string;
   displayName?: { text?: string };
   formattedAddress?: string;
   location?: {
     latitude?: number;
     longitude?: number;
   };
+  rating?: number;
   primaryType?: string;
   types?: string[];
 };
@@ -126,7 +137,74 @@ function normalizePlace(place: GooglePlace): Station | null {
   };
 }
 
+function normalizeNearbyChargingPlace(place: GoogleNearbyPlace): Station | null {
+  const name = place.displayName?.text?.trim();
+  const latitude = place.location?.latitude;
+  const longitude = place.location?.longitude;
+
+  if (!place.id || !name || typeof latitude !== "number" || typeof longitude !== "number") {
+    return null;
+  }
+
+  return {
+    id: place.id,
+    google_place_id: place.id,
+    name,
+    address: place.formattedAddress || null,
+    latitude,
+    longitude,
+    phone: null,
+    website: null,
+    rating: place.rating || null,
+    operator: null,
+    created_at: null,
+    updated_at: null,
+  };
+}
+
 export class GoogleService {
+  async getPlaceLocation(placeId: string) {
+    const key = requireGoogleKey();
+    const url = new URL(`${appConfig.google.placesApiUrl}/details/json`);
+    url.searchParams.set("place_id", placeId);
+    url.searchParams.set("fields", "place_id,name,formatted_address,geometry");
+    url.searchParams.set("key", key);
+
+    const response = await fetch(url, { cache: "no-store" });
+    const data = await response.json() as PlacesResponse & {
+      result?: GooglePlace;
+      error_message?: string;
+    };
+    const location = data.result?.geometry?.location;
+
+    if (!response.ok || data.status === "REQUEST_DENIED" || !location) {
+      throw new Error(data.error_message || "Google place location is unavailable.");
+    }
+
+    return {
+      name: data.result?.formatted_address || data.result?.name || "",
+      location,
+    };
+  }
+
+  async geocodeLocation(query: string) {
+    const key = requireGoogleKey();
+    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+    url.searchParams.set("address", query.trim());
+    url.searchParams.set("components", "country:PK");
+    url.searchParams.set("region", "pk");
+    url.searchParams.set("key", key);
+
+    const response = await fetch(url, { cache: "no-store" });
+    const data = await response.json() as GeocodingResponse;
+
+    if (!response.ok || data.status === "REQUEST_DENIED") {
+      throw new Error("Google Geocoding API is unavailable.");
+    }
+
+    return data.results?.[0]?.geometry?.location || null;
+  }
+
   async searchLocationSuggestions(query: string) {
     const key = requireGoogleKey();
     const url = new URL(`${appConfig.google.placesApiUrl}/autocomplete/json`);
@@ -156,6 +234,7 @@ export class GoogleService {
         label,
         detail: prediction.structured_formatting?.secondary_text?.trim() || "Pakistan",
         value: prediction.description?.trim() || label,
+        placeId: prediction.place_id,
       }];
     });
   }
@@ -183,18 +262,55 @@ export class GoogleService {
 
   async searchNearbyEvStations(origin: { lat: number; lng: number }, radiusMeters = 50000) {
     const key = requireGoogleKey();
+    const radius = Math.min(Math.max(radiusMeters, 1000), 50000);
+    const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.types",
+      },
+      body: JSON.stringify({
+        includedTypes: ["electric_vehicle_charging_station"],
+        maxResultCount: 20,
+        rankPreference: "DISTANCE",
+        languageCode: "en",
+        regionCode: "PK",
+        locationRestriction: {
+          circle: {
+            center: {
+              latitude: origin.lat,
+              longitude: origin.lng,
+            },
+            radius,
+          },
+        },
+      }),
+      cache: "no-store",
+    });
+
+    if (response.ok) {
+      const data = await response.json() as GoogleNearbyResponse;
+      const stations = (data.places || [])
+        .map(normalizeNearbyChargingPlace)
+        .filter((station): station is Station => Boolean(station))
+        .filter(isStationInPakistan);
+      return stations;
+    }
+
+    // Keep compatibility when Places API (New) has not yet been enabled.
     const url = new URL(`${appConfig.google.placesApiUrl}/nearbysearch/json`);
     url.searchParams.set("location", `${origin.lat},${origin.lng}`);
-    url.searchParams.set("radius", String(Math.min(Math.max(radiusMeters, 1000), 50000)));
+    url.searchParams.set("radius", String(radius));
     url.searchParams.set("keyword", "EV charging station");
     url.searchParams.set("type", "electric_vehicle_charging_station");
     url.searchParams.set("region", "pk");
     url.searchParams.set("key", key);
 
-    const response = await fetch(url, { cache: "no-store" });
-    const data = (await response.json()) as PlacesResponse;
+    const legacyResponse = await fetch(url, { cache: "no-store" });
+    const data = (await legacyResponse.json()) as PlacesResponse;
 
-    if (!response.ok || data.status === "REQUEST_DENIED") {
+    if (!legacyResponse.ok || data.status === "REQUEST_DENIED") {
       throw new Error("Google Places API unavailable.");
     }
 

@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       label: location,
       detail: "Pakistan",
       value: location,
+      placeId: null,
     }));
 
   try {

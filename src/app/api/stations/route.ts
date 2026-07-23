@@ -19,6 +19,10 @@ export async function GET(request: Request) {
 }
 
 function parseOrigin(lat: string | null, lng: string | null): LatLngLiteral | undefined {
+  if (lat === null || lng === null) {
+    return undefined;
+  }
+
   const parsedLat = Number(lat);
   const parsedLng = Number(lng);
 

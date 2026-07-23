@@ -19,6 +19,9 @@ type SearchSuggestion = {
   label: string;
   detail: string;
   value: string;
+  placeId?: string | null;
+  lat?: number;
+  lng?: number;
 };
 
 export function SearchBar({
@@ -36,6 +39,7 @@ export function SearchBar({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [resolvingLocation, setResolvingLocation] = useState(false);
   const blurTimeoutRef = useRef<number | null>(null);
   const suggestionsId = useId();
 
@@ -51,8 +55,10 @@ export function SearchBar({
       label: station.name,
       detail: [station.operator, station.address].filter(Boolean).join(" · "),
       value: station.name,
+      lat: station.latitude ?? undefined,
+      lng: station.longitude ?? undefined,
     }));
-    const matches = [...localSuggestions, ...remoteSuggestions].filter((suggestion, index, allSuggestions) => (
+    const matches = [...remoteSuggestions, ...localSuggestions].filter((suggestion, index, allSuggestions) => (
       allSuggestions.findIndex((candidate) => candidate.id === suggestion.id) === index
       && [suggestion.label, suggestion.detail]
         .some((value) => value.toLowerCase().includes(normalizedQuery))
@@ -96,7 +102,7 @@ export function SearchBar({
     }
   }, []);
 
-  function navigate(nextValue: string) {
+  function navigate(nextValue: string, origin?: { lat: number; lng: number }) {
     const nextParams = new URLSearchParams(params.toString());
     const trimmedQuery = nextValue.trim();
 
@@ -106,6 +112,13 @@ export function SearchBar({
       nextParams.delete("q");
     }
     nextParams.delete("page");
+    if (origin) {
+      nextParams.set("lat", String(origin.lat));
+      nextParams.set("lng", String(origin.lng));
+    } else {
+      nextParams.delete("lat");
+      nextParams.delete("lng");
+    }
 
     const nextQuery = nextParams.toString();
     router.push(nextQuery ? `${action}?${nextQuery}` : action);
@@ -117,11 +130,40 @@ export function SearchBar({
     navigate(query);
   }
 
-  function chooseSuggestion(suggestion: SearchSuggestion) {
+  async function chooseSuggestion(suggestion: SearchSuggestion) {
     setQuery(suggestion.value);
     setOpen(false);
     setActiveIndex(-1);
-    navigate(suggestion.value);
+
+    if (typeof suggestion.lat === "number" && typeof suggestion.lng === "number") {
+      navigate(suggestion.value, { lat: suggestion.lat, lng: suggestion.lng });
+      return;
+    }
+
+    setResolvingLocation(true);
+
+    try {
+      const locationParams = new URLSearchParams({ q: suggestion.value });
+      if (suggestion.placeId) {
+        locationParams.set("placeId", suggestion.placeId);
+      }
+      const response = await fetch(`/api/search/location?${locationParams.toString()}`);
+
+      if (!response.ok) {
+        throw new Error("Location could not be resolved.");
+      }
+
+      const location = await response.json() as {
+        name?: string;
+        lat: number;
+        lng: number;
+      };
+      navigate(suggestion.value, { lat: location.lat, lng: location.lng });
+    } catch {
+      navigate(suggestion.value);
+    } finally {
+      setResolvingLocation(false);
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -137,7 +179,7 @@ export function SearchBar({
       setActiveIndex((index) => (index <= 0 ? matchingSuggestions.length - 1 : index - 1));
     } else if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
-      chooseSuggestion(matchingSuggestions[activeIndex]);
+      void chooseSuggestion(matchingSuggestions[activeIndex]);
     } else if (event.key === "Escape") {
       setOpen(false);
     }
@@ -181,8 +223,9 @@ export function SearchBar({
         aria-expanded={open && matchingSuggestions.length > 0}
         aria-controls={suggestionsId}
         aria-activedescendant={activeIndex >= 0 ? `${suggestionsId}-option-${activeIndex}` : undefined}
+        aria-busy={resolvingLocation}
         autoComplete="off"
-        placeholder="Search by city, address, or operator"
+        placeholder="Search a place or area"
         className={`min-h-12 min-w-0 border border-transparent bg-transparent text-base text-foreground placeholder:text-muted focus:border-accent/50 sm:text-sm ${
           floating ? "rounded-xl px-1 sm:px-2" : "rounded-lg px-4"
         }`}
@@ -190,9 +233,10 @@ export function SearchBar({
       <button
         type="submit"
         aria-label="Search"
+        disabled={resolvingLocation}
         className={`min-h-12 bg-primary text-sm font-bold text-secondary transition hover:bg-primary-hover ${
           floating ? "grid min-w-12 place-items-center rounded-xl px-3" : "rounded-lg px-5"
-        }`}
+        } disabled:cursor-wait disabled:opacity-70`}
       >
         {floating ? (
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
@@ -218,7 +262,7 @@ export function SearchBar({
                 aria-selected={index === activeIndex}
                 onMouseDown={(event) => event.preventDefault()}
                 onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => chooseSuggestion(suggestion)}
+                onClick={() => void chooseSuggestion(suggestion)}
                 className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 transition ${
                   index === activeIndex ? "bg-background" : "hover:bg-background"
                 }`}
