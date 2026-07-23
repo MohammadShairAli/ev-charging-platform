@@ -43,6 +43,7 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
               defaultValue={query}
               compact
               floating
+              suggestions={stations}
               className="mx-auto"
             />
           </div>
@@ -94,6 +95,7 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
             action={ROUTES.stations}
             defaultValue={query}
             floating
+            suggestions={stations}
             className="mx-auto"
           />
         </div>

@@ -48,6 +48,9 @@ export default async function HomePage() {
       <section className="overflow-hidden border-b border-border bg-surface">
         <div className="bg-background sm:hidden">
           <div className="relative h-[20rem] overflow-hidden">
+            <div className="absolute inset-x-3 top-3 z-20">
+              <SearchBar floating suggestions={stations} className="mx-auto" />
+            </div>
             <ClosestStationPanel
               mapClassName="h-full min-h-full rounded-none border-0"
               showDetails={false}
@@ -56,6 +59,10 @@ export default async function HomePage() {
           <div className="relative z-10 -mt-8 px-4 pb-2">
             <ClosestStationPanel showMap={false} />
           </div>
+        </div>
+
+        <div className="sticky top-20 z-40 mx-auto hidden max-w-3xl px-6 pt-6 sm:block lg:px-8">
+          <SearchBar floating suggestions={stations} className="mx-auto" />
         </div>
 
         <div className="mx-auto grid max-w-7xl items-start gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12 lg:px-8 lg:py-20">
@@ -70,10 +77,6 @@ export default async function HomePage() {
             <p className="mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg">
               Find chargers, plan range-aware journeys, compare ownership costs, and discover the right electric vehicle in one place.
             </p>
-
-            <div className="mt-7 max-w-xl">
-              <SearchBar />
-            </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <ButtonLink href={ROUTES.stations}>Find a charger</ButtonLink>

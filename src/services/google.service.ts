@@ -33,6 +33,18 @@ type PlacesResponse = {
   status?: string;
 };
 
+type PlacesAutocompleteResponse = {
+  predictions?: Array<{
+    place_id?: string;
+    description?: string;
+    structured_formatting?: {
+      main_text?: string;
+      secondary_text?: string;
+    };
+  }>;
+  status?: string;
+};
+
 type DirectionsResponse = {
   routes?: Array<{
     overview_polyline?: { points?: string };
@@ -115,6 +127,39 @@ function normalizePlace(place: GooglePlace): Station | null {
 }
 
 export class GoogleService {
+  async searchLocationSuggestions(query: string) {
+    const key = requireGoogleKey();
+    const url = new URL(`${appConfig.google.placesApiUrl}/autocomplete/json`);
+    url.searchParams.set("input", query.trim());
+    url.searchParams.set("components", "country:pk");
+    url.searchParams.set("language", "en");
+    url.searchParams.set("region", "pk");
+    url.searchParams.set("key", key);
+
+    const response = await fetch(url, { cache: "no-store" });
+    const data = await response.json() as PlacesAutocompleteResponse;
+
+    if (!response.ok || data.status === "REQUEST_DENIED") {
+      throw new Error("Google Places autocomplete is unavailable.");
+    }
+
+    return (data.predictions || []).flatMap((prediction) => {
+      const label = prediction.structured_formatting?.main_text?.trim()
+        || prediction.description?.trim();
+
+      if (!label) {
+        return [];
+      }
+
+      return [{
+        id: prediction.place_id || prediction.description || label,
+        label,
+        detail: prediction.structured_formatting?.secondary_text?.trim() || "Pakistan",
+        value: prediction.description?.trim() || label,
+      }];
+    });
+  }
+
   async searchEvStations(query: string) {
     const key = requireGoogleKey();
     const url = new URL(`${appConfig.google.placesApiUrl}/textsearch/json`);
