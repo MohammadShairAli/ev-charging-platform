@@ -215,7 +215,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
                 type="file"
                 accept="image/*"
                 onChange={(event) => void handleImage(event.target.files?.[0])}
-                className="mt-2 min-h-12 w-full rounded-lg border border-border bg-secondary px-3 py-3 text-sm text-foreground"
+                className="mt-2 min-h-12 w-full rounded-lg border border-border bg-surface px-3 py-3 text-sm text-foreground"
               />
               <p className="mt-1 text-xs text-muted">Optional.</p>
             </div>
@@ -235,7 +235,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
         ) : null}
 
         {error || authError ? <p role="alert" className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">{error || authError}</p> : null}
-        {message ? <p role="status" className="rounded-lg border border-primary/40 bg-background p-3 text-sm text-foreground">{message}</p> : null}
+        {message ? <p role="status" className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">{message}</p> : null}
 
         {mode === "login" && verificationEmail ? (
           <div className="rounded-lg border border-border bg-background p-3">
@@ -246,7 +246,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
               type="button"
               onClick={resendVerification}
               disabled={resending}
-              className="mt-3 min-h-10 rounded-lg border border-border bg-secondary px-4 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-wait disabled:opacity-60"
+              className="mt-3 min-h-10 rounded-lg border border-border bg-surface px-4 text-sm font-bold text-foreground transition hover:border-border hover:text-primary disabled:cursor-wait disabled:opacity-60"
             >
               {resending ? "Requesting..." : "Resend verification email"}
             </button>
@@ -273,7 +273,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
         <a
           href="/api/auth/google"
           onClick={prepareGoogleSignup}
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded border border-[#dadce0] bg-white px-4 text-sm font-medium text-[#3c4043] shadow-sm transition hover:bg-[#f8fafd] hover:shadow disabled:opacity-60"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded border border-border bg-surface px-4 text-sm font-medium text-foreground shadow-sm transition hover:bg-surface-strong hover:shadow disabled:opacity-60"
         >
           <GoogleIcon />
           <span>Continue with Google</span>
@@ -281,7 +281,7 @@ export function AuthPanel({ mode }: { mode: Mode }) {
         <button
           type="button"
           onClick={enterGuest}
-          className="min-h-12 rounded-lg border border-border bg-background px-4 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
+          className="min-h-12 rounded-lg border border-border bg-background px-4 text-sm font-bold text-foreground transition hover:border-border hover:text-primary"
         >
           Use as guest
         </button>
@@ -321,19 +321,19 @@ function GoogleIcon() {
   return (
     <svg aria-hidden="true" className="h-[18px] w-[18px]" viewBox="0 0 18 18">
       <path
-        fill="#4285F4"
+        fill="#000000"
         d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
       />
       <path
-        fill="#34A853"
+        fill="#000000"
         d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.33-1.58-5.04-3.72H.96v2.33A9 9 0 0 0 9 18z"
       />
       <path
-        fill="#FBBC05"
+        fill="#000000"
         d="M3.96 10.7A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.28-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.03l3-2.33z"
       />
       <path
-        fill="#EA4335"
+        fill="#000000"
         d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.97l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"
       />
     </svg>
@@ -349,7 +349,7 @@ function TextField({
       <label htmlFor={props.name} className="text-sm font-semibold text-foreground">{label}</label>
       <input
         id={props.name}
-        className="mt-2 min-h-12 w-full rounded-lg border border-border bg-secondary px-4 text-base text-foreground placeholder:text-muted/70"
+        className="mt-2 min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-foreground placeholder:text-muted/70"
         {...props}
       />
     </div>

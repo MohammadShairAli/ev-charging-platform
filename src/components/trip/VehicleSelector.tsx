@@ -190,7 +190,7 @@ export function VehicleSelector({
                 onValueChange("");
               }
             }}
-            className="min-h-12 w-full appearance-none rounded-xl border border-border bg-secondary pl-11 pr-11 text-base text-foreground disabled:cursor-wait disabled:opacity-70"
+            className="min-h-12 w-full appearance-none rounded-xl border border-border bg-surface pl-11 pr-11 text-base text-foreground disabled:cursor-wait disabled:opacity-70"
           >
             <option value="">{loading ? "Loading cars..." : "Choose a car"}</option>
             {vehicles.map((vehicle) => (
@@ -232,11 +232,11 @@ export function VehicleSelector({
           onKeyDown={handleKeyDown}
           placeholder={loading ? "Loading cars..." : "Search brand, model, or variant"}
           disabled={loading || Boolean(loadError)}
-          className="min-h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-4 text-base text-foreground placeholder:text-muted/70 disabled:cursor-wait disabled:opacity-70"
+          className="min-h-12 w-full rounded-xl border border-border bg-surface pl-11 pr-4 text-base text-foreground placeholder:text-muted/70 disabled:cursor-wait disabled:opacity-70"
         />
 
         {open && !loading && !loadError ? (
-          <ul id="trip-vehicle-options" role="listbox" className="absolute inset-x-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-border bg-secondary p-1 shadow-xl">
+          <ul id="trip-vehicle-options" role="listbox" className="absolute inset-x-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-xl">
             {matches.length ? matches.map((vehicle, index) => (
               <li key={vehicle.id} role="presentation">
                 <button

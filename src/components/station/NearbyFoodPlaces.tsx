@@ -63,7 +63,7 @@ function NearbyPlaceCard({
             target="_blank"
             rel="noreferrer"
             aria-label={`Open directions to ${place.name} in Google Maps`}
-            className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
+            className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-border hover:text-primary"
           >
             <AppIcon name="near_me" className="h-5 w-5" />
           </a>

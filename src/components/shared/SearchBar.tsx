@@ -191,8 +191,8 @@ export function SearchBar({
       role="search"
       className={`relative w-full items-center gap-2 border border-border p-1.5 ${
         floating
-          ? "grid grid-cols-[minmax(0,1fr)_auto] rounded-2xl bg-secondary/5 shadow-[0_14px_40px_rgba(28,28,28,0.18)] backdrop-blur-md"
-          : "hidden rounded-lg bg-secondary sm:grid-cols-[1fr_auto] lg:grid"
+          ? "grid grid-cols-[minmax(0,1fr)_auto] rounded-2xl bg-surface/5 shadow-[0_14px_40px_rgba(0,0,0,0.18)] backdrop-blur-md"
+          : "hidden rounded-lg bg-surface sm:grid-cols-[1fr_auto] lg:grid"
       } ${compact ? "max-w-2xl" : "max-w-3xl"} ${className}`}
     >
       <input
@@ -226,7 +226,7 @@ export function SearchBar({
         aria-busy={resolvingLocation}
         autoComplete="off"
         placeholder="Search a place or area"
-        className={`min-h-12 min-w-0 border border-transparent bg-transparent text-base text-foreground placeholder:text-muted focus:border-accent/50 sm:text-sm ${
+        className={`min-h-12 min-w-0 border border-border bg-transparent text-base text-foreground placeholder:text-muted focus:border-border sm:text-sm ${
           floating ? "rounded-xl px-1 sm:px-2" : "rounded-lg px-4"
         }`}
       />
@@ -251,7 +251,7 @@ export function SearchBar({
         <ul
           id={suggestionsId}
           role="listbox"
-          className="absolute left-0 right-0 top-full z-[70] mt-2 max-h-80 overflow-y-auto rounded-xl border border-border bg-secondary p-1.5 text-left shadow-xl"
+          className="absolute left-0 right-0 top-full z-[70] mt-2 max-h-80 overflow-y-auto rounded-xl border border-border bg-surface p-1.5 text-left shadow-xl"
         >
           {matchingSuggestions.map((suggestion, index) => (
             <li key={suggestion.id} role="presentation">
@@ -267,7 +267,7 @@ export function SearchBar({
                   index === activeIndex ? "bg-background" : "hover:bg-background"
                 }`}
               >
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 fill-none stroke-primary stroke-[1.8]">
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 fill-none stroke-black stroke-[1.8]">
                   <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" />
                   <circle cx="12" cy="10" r="2" />
                 </svg>

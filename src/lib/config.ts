@@ -1,11 +1,19 @@
 import type { LatLngLiteral } from "@/src/types";
 
+const configuredThemeColour =
+  process.env.THEME_COLOUR ||
+  process.env.NEXT_PUBLIC_PRIMARY_COLOR ||
+  "#bd004f";
+
+const themeColour = /^#[\da-f]{6}$/i.test(configuredThemeColour)
+  ? configuredThemeColour
+  : "#bd004f";
+
 export const appConfig = {
   name: process.env.NEXT_PUBLIC_APP_NAME || "EV Charging Pakistan",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "",
   theme: {
-    primary: process.env.NEXT_PUBLIC_PRIMARY_COLOR || "#22C55E",
-    secondary: process.env.NEXT_PUBLIC_SECONDARY_COLOR || "#FFFFFF",
+    colour: themeColour,
   },
   google: {
     mapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",

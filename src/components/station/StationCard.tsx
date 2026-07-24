@@ -26,10 +26,10 @@ export function StationCard({
   const directionsUrl = googleMapsDirectionsUrl(station);
   const placeImageUrl = station.google_place_id
     ? `/api/place-photo?placeId=${encodeURIComponent(station.google_place_id)}`
-    : "/ev-hero.png";
+    : "/icon.png";
 
   return (
-    <article className="group rounded-2xl border border-border bg-surface p-4 transition hover:border-primary sm:p-5">
+    <article className="group rounded-2xl border border-border bg-surface p-4 transition hover:border-border sm:p-5">
       <div className="flex items-start gap-4">
         <div className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface-strong">
           {showPlaceImage ? (
@@ -86,7 +86,7 @@ export function StationCard({
               target="_blank"
               rel="noreferrer"
               aria-label={`Open ${station.name} in Google Maps`}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface text-foreground transition hover:border-border hover:text-primary"
             >
               <AppIcon name="near_me" className="h-5 w-5" />
             </a>

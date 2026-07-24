@@ -32,7 +32,7 @@ export function StationPhotoGallery({
             type="button"
             onClick={() => scroll(-1)}
             aria-label="Show previous station photos"
-            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-primary hover:text-primary"
+            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-border hover:text-primary"
           >
             <AppIcon name="arrow_back" className="h-[1.125rem] w-[1.125rem]" />
           </button>
@@ -40,7 +40,7 @@ export function StationPhotoGallery({
             type="button"
             onClick={() => scroll(1)}
             aria-label="Show next station photos"
-            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-primary hover:text-primary"
+            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-border hover:text-primary"
           >
             <AppIcon name="arrow_forward" className="h-[1.125rem] w-[1.125rem]" />
           </button>

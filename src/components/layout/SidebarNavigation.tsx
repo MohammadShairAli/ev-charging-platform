@@ -74,7 +74,7 @@ export function SidebarNavigation() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open menu"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-surface-strong text-primary transition hover:border-primary"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-surface-strong text-primary transition hover:border-border"
       >
         <AppIcon name="menu" className="h-[1.35rem] w-[1.35rem]" />
       </button>
@@ -87,7 +87,7 @@ export function SidebarNavigation() {
             onClick={close}
             className="absolute inset-0 bg-ink/40"
           />
-          <aside className="relative flex h-full w-[min(22rem,88vw)] flex-col border-r border-border bg-secondary shadow-2xl">
+          <aside className="relative flex h-full w-[min(22rem,88vw)] flex-col border-r border-border bg-surface shadow-2xl">
             <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4">
               <Link href={ROUTES.home} onClick={close} className="flex min-w-0 items-center gap-3">
                 <Image src="/icon.png" alt="" width={38} height={38} className="h-9 w-9 shrink-0 object-contain" />
@@ -97,7 +97,7 @@ export function SidebarNavigation() {
                 type="button"
                 onClick={close}
                 aria-label="Close menu"
-                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface text-muted transition hover:border-primary hover:text-primary"
+                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface text-muted transition hover:border-border hover:text-primary"
               >
                 <AppIcon name="close" className="h-5 w-5" />
               </button>
@@ -157,7 +157,7 @@ function SidebarProfile({ auth, onNavigate }: { auth: StoredAuth | null; onNavig
     <Link
       href={profileHref}
       onClick={onNavigate}
-      className="mx-3 mt-3 flex items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:border-primary"
+      className="mx-3 mt-3 flex items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:border-border"
     >
       <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-background">
         {avatar ? (

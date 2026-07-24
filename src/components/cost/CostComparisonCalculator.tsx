@@ -419,7 +419,7 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
                   });
                 }
               }}
-              className="min-h-12 w-full appearance-none rounded-xl border border-border bg-secondary pl-11 pr-11 text-base text-foreground"
+              className="min-h-12 w-full appearance-none rounded-xl border border-border bg-surface pl-11 pr-11 text-base text-foreground"
             >
               <option value="">{savedCars.length ? "Choose a saved car" : "No saved cars"}</option>
               {savedCars.map((car) => (
@@ -434,7 +434,7 @@ export function CostComparisonCalculator({ initialInputs = defaultCostInputs }: 
           {vehicleError ? <p role="alert" className="mt-2 text-sm text-foreground">{vehicleError}</p> : null}
           {inputs.vehicleId ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-muted">
-              <span className="rounded-full border border-primary/30 px-3 py-1">{inputs.vehicleKind}</span>
+              <span className="rounded-full border border-border px-3 py-1">{inputs.vehicleKind}</span>
               <span className="rounded-full border border-border px-3 py-1">{inputs.evRangePerChargeKm} km range</span>
               <span className="rounded-full border border-border px-3 py-1">{inputs.unitsPerFullCharge} kWh battery</span>
             </div>
@@ -638,7 +638,7 @@ function AssumptionDropdown({
   return (
     <div
       className={`overflow-hidden rounded-xl border bg-background transition-all duration-200 ${isOpen
-          ? "border-primary/40 shadow-sm"
+          ? "border-border shadow-sm"
           : "border-border"
         }`}
     >

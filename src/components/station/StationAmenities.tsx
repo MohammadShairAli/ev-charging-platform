@@ -68,13 +68,13 @@ function OpeningHoursCard({ openNow, todayHours }: { openNow: boolean | null; to
 
   return (
     <div className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-accent-soft p-4">
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-secondary text-primary" aria-hidden="true">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface text-primary" aria-hidden="true">
         <AppIcon name="schedule" className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Today&apos;s opening hours</p>
         <p className="mt-1 text-base font-bold text-foreground">{todayHours || "Not provided"}</p>
-        <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${openNow === true ? "bg-primary text-secondary" : "bg-secondary text-muted"}`}>
+        <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${openNow === true ? "bg-primary text-secondary" : "bg-surface text-muted"}`}>
           {status}
         </span>
       </div>
@@ -102,7 +102,7 @@ function FacilityList({ facilities }: { facilities: Facility[] }) {
 
 function FacilityStatus({ value }: { value: boolean | null }) {
   const label = value === true ? "Confirmed" : value === false ? "Unavailable" : "Usually available";
-  const dotTone = value === true ? "bg-primary" : value === false ? "bg-muted" : "bg-amber-500";
+  const dotTone = value === true ? "bg-primary" : value === false ? "bg-muted" : "bg-primary";
 
   return (
     <span className="mt-0.5 flex min-w-0 items-start gap-1 text-[0.58rem] font-medium leading-3 text-muted">

@@ -70,7 +70,7 @@ export function ClosestStationPanel({
       {showDetails && isLoading ? <LocationLoading /> : null}
 
       {showDetails && !isLoading && closest ? (
-        <div className="rounded-2xl border border-border bg-secondary p-4 sm:p-5">
+        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface-strong">
               <Image
@@ -113,7 +113,7 @@ export function ClosestStationPanel({
                 target="_blank"
                 rel="noreferrer"
                 aria-label={`Open ${closest.station.name} in Google Maps`}
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-border bg-surface text-foreground transition hover:border-primary hover:text-primary"
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-border bg-surface text-foreground transition hover:border-border hover:text-primary"
               >
                 <AppIcon name="near_me" className="h-5 w-5" />
               </a>
@@ -123,7 +123,7 @@ export function ClosestStationPanel({
       ) : null}
 
       {showDetails && !isLoading && !closest ? (
-        <div className="rounded-xl bg-secondary p-4 text-sm font-medium text-muted">No station coordinates available.</div>
+        <div className="rounded-xl bg-surface p-4 text-sm font-medium text-muted">No station coordinates available.</div>
       ) : null}
     </div>
   );
@@ -144,7 +144,7 @@ function LocationLoading({ className = "", map = false }: { className?: string; 
 
   return (
     <div
-      className="animate-pulse rounded-2xl border border-border bg-secondary p-4 sm:p-5"
+      className="animate-pulse rounded-2xl border border-border bg-surface p-4 sm:p-5"
       role="status"
       aria-live="polite"
     >

@@ -67,7 +67,7 @@ export function ResetPasswordPanel() {
           <PasswordField name="confirmPassword" label="Confirm password" />
 
           {error ? <p role="alert" className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">{error}</p> : null}
-          {message ? <p role="status" className="rounded-lg border border-primary/40 bg-background p-3 text-sm text-foreground">{message}</p> : null}
+          {message ? <p role="status" className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">{message}</p> : null}
 
           <button
             type="submit"
@@ -103,7 +103,7 @@ function PasswordField({ name, label }: { name: string; label: string }) {
         autoComplete="new-password"
         required
         minLength={6}
-        className="mt-2 min-h-12 w-full rounded-lg border border-border bg-secondary px-4 text-base text-foreground"
+        className="mt-2 min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-foreground"
       />
     </div>
   );

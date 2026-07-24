@@ -1,20 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f5;
-  --foreground: #1c1c1c;
-  --primary: #166534;
-  --primary-hover: #14532d;
+  color-scheme: light dark;
+  --theme-colour: #bd004f;
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: var(--theme-colour);
+  --primary-hover: var(--theme-colour);
   --secondary: #ffffff;
   --surface: #ffffff;
-  --surface-strong: #efefec;
-  --border: #deded9;
-  --muted: #686868;
-  --accent: #166534;
-  --accent-soft: #efefec;
-  --electric: #166534;
-  --charcoal: #1c1c1c;
-  --ink: #ffffff;
+  --surface-strong: #ffffff;
+  --border: transparent;
+  --muted: #000000;
+  --accent: var(--theme-colour);
+  --accent-soft: #ffffff;
+  --electric: var(--theme-colour);
+  --charcoal: #000000;
+  --ink: #000000;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --foreground: #ffffff;
+    --surface: #000000;
+    --surface-strong: #000000;
+    --border: transparent;
+    --muted: #ffffff;
+    --accent-soft: #000000;
+    --charcoal: #ffffff;
+    --ink: #ffffff;
+  }
 }
 
 @theme inline {
@@ -53,17 +69,21 @@ body {
 }
 
 ::selection {
-  background: #d9ded9;
-  color: var(--foreground);
+  background: var(--primary);
+  color: var(--secondary);
 }
 
 a,
 button,
 input,
 select {
-  outline-color: var(--primary);
+  outline-color: var(--foreground);
+}
+
+:is(input, select, textarea).border-border {
+  border-color: var(--foreground);
 }
 
 .ev-map-placeholder {
-  background: var(--surface-strong) url("/ev-hero.png") center top / cover no-repeat;
+  background: var(--surface);
 }

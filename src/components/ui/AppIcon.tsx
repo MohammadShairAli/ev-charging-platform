@@ -99,5 +99,12 @@ export function AppIcon({
 }) {
   const Icon = icons[name] || MdBolt;
 
-  return <Icon className={className} aria-hidden="true" focusable="false" />;
+  return (
+    <Icon
+      className={className}
+      color="#000000"
+      aria-hidden="true"
+      focusable="false"
+    />
+  );
 }

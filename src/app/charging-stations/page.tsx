@@ -54,7 +54,7 @@ export default async function ChargingStationsPage({ searchParams }: ChargingSta
           />
         </div>
 
-        <div className="relative z-10 -mt-8 rounded-t-[1.6rem] border border-border bg-secondary px-3 pb-4 pt-3">
+        <div className="relative z-10 -mt-8 rounded-t-[1.6rem] border border-border bg-surface px-3 pb-4 pt-3">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">Station directory</p>

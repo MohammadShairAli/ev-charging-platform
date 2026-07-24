@@ -16,7 +16,7 @@ const variantClasses = {
   primary:
     "bg-primary text-secondary hover:bg-primary-hover",
   secondary:
-    "border border-border bg-surface text-foreground hover:border-primary hover:text-primary",
+    "border border-border bg-surface text-foreground hover:border-border hover:text-primary",
 };
 
 export function ButtonLink({ href, children, external, variant = "primary", className = "" }: ButtonLinkProps) {

@@ -35,7 +35,7 @@ export function SavedCarsEditor({ cars, onChange }: SavedCarsEditorProps) {
   return (
     <section className="rounded-lg border border-border bg-background p-4">
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/30 text-primary">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-primary">
           <AppIcon name="electric_car" className="h-5 w-5" />
         </span>
         <div>
@@ -52,7 +52,7 @@ export function SavedCarsEditor({ cars, onChange }: SavedCarsEditorProps) {
           {cars.map((car) => (
             <li
               key={car.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-secondary px-3 py-3"
+              className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-3"
             >
               <AppIcon name="directions_car" className="h-5 w-5 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
@@ -65,7 +65,7 @@ export function SavedCarsEditor({ cars, onChange }: SavedCarsEditorProps) {
                 type="button"
                 onClick={() => onChange(cars.filter((savedCar) => savedCar.id !== car.id))}
                 aria-label={`Remove ${car.make} ${car.model}`}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-muted transition hover:border-primary hover:text-primary"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-muted transition hover:border-border hover:text-primary"
               >
                 <AppIcon name="close" className="h-4 w-4" />
               </button>
@@ -79,7 +79,7 @@ export function SavedCarsEditor({ cars, onChange }: SavedCarsEditorProps) {
       )}
 
       {limitReached ? (
-        <p role="alert" className="mt-4 rounded-lg border border-primary/40 bg-secondary p-3 text-sm leading-6 text-foreground">
+        <p role="alert" className="mt-4 rounded-lg border border-border bg-surface p-3 text-sm leading-6 text-foreground">
           You already have {MAX_SAVED_CARS} cars. Remove one to add another.
         </p>
       ) : (

@@ -78,7 +78,7 @@ export function StationRouteMap({
         onRouteResolved={handleRouteResolved}
         className="min-h-[24rem] rounded-2xl sm:min-h-[30rem]"
       />
-      <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 rounded-xl border border-border bg-secondary/95 p-3 shadow-lg backdrop-blur">
+      <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 rounded-xl border border-border bg-surface/95 p-3 shadow-lg backdrop-blur">
         <p className="text-xs font-semibold text-muted">{locationLabel}</p>
         <p className="mt-1 text-sm font-bold text-foreground">
           {routeSummary ? `${routeSummary.distanceText} · ${routeSummary.durationText}` : destination ? "Calculating driving route…" : "Route unavailable"}

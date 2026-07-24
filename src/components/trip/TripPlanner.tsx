@@ -812,7 +812,7 @@ function LocationAutocompleteInput({
         <div
           id={`${id}-suggestions`}
           role="status"
-          className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-secondary px-3 py-2 text-xs leading-5 text-muted shadow-xl"
+          className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs leading-5 text-muted shadow-xl"
         >
           {suggestionError}
         </div>
@@ -820,7 +820,7 @@ function LocationAutocompleteInput({
         <ul
           id={`${id}-suggestions`}
           role="listbox"
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-xl border border-border bg-secondary p-1 shadow-xl"
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-xl"
         >
           {suggestions.map((prediction, index) => (
             <li key={`${prediction.text.toString()}-${index}`} role="presentation">
@@ -1238,7 +1238,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
             Back
           </button>
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-primary/30 text-primary">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-border text-primary">
               <AppIcon name="route" className="h-6 w-6" />
             </span>
             <div>
@@ -1293,8 +1293,8 @@ export function TripPlanner({ stations }: TripPlannerProps) {
             aria-controls="planner-intro-details"
             className={`ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-full border transition ${
               showPlannerInfo
-                ? "border-primary bg-primary text-secondary"
-                : "border-border bg-background text-primary hover:border-primary"
+                ? "border-border bg-primary text-secondary"
+                : "border-border bg-background text-primary hover:border-border"
             }`}
           >
             <AppIcon name={showPlannerInfo ? "close" : "read_more"} className="h-5 w-5" />
@@ -1309,13 +1309,13 @@ export function TripPlanner({ stations }: TripPlannerProps) {
         <form className="mt-5 grid gap-4 lg:grid-cols-2 lg:gap-5" onSubmit={handleSubmit}>
           <fieldset className="rounded-2xl border border-border bg-background p-2 lg:col-span-2">
             <legend className="sr-only">Enter your route</legend>
-            <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] grid-rows-2 rounded-xl border border-border bg-secondary">
+            <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] grid-rows-2 rounded-xl border border-border bg-surface">
               <div className="relative col-start-1 row-span-2 row-start-1 flex flex-col items-center justify-around py-3 text-primary">
                 <span className="absolute bottom-[2.65rem] top-[2.65rem] w-px bg-border" aria-hidden="true" />
-                <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-secondary" aria-hidden="true">
+                <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-surface" aria-hidden="true">
                   <AppIcon name="location_on" className="h-5 w-5" />
                 </span>
-                <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-secondary" aria-hidden="true">
+                <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-surface" aria-hidden="true">
                   <AppIcon name="flag" className="h-5 w-5" />
                 </span>
               </div>
@@ -1369,7 +1369,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                   type="button"
                   onClick={swapLocations}
                   aria-label="Swap starting point and destination"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-muted transition hover:border-primary hover:text-primary"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-border bg-background text-muted transition hover:border-border hover:text-primary"
                 >
                   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
                     <path d="M8 4v15m0-15L5 7m3-3 3 3M16 20V5m0 15 3-3m-3 3-3-3" strokeLinecap="round" strokeLinejoin="round" />
@@ -1415,7 +1415,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                     setEditingRange(false);
                   }
                 }}
-                className="min-h-12 w-full appearance-none rounded-xl border border-border bg-secondary pl-11 pr-11 text-base text-foreground"
+                className="min-h-12 w-full appearance-none rounded-xl border border-border bg-surface pl-11 pr-11 text-base text-foreground"
               >
                 <option value="">{savedCars.length ? "Choose a saved car" : "No saved cars"}</option>
                 {savedCars.map((car) => (
@@ -1433,7 +1433,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
             <div className="h-full rounded-xl border border-border bg-background p-3 lg:p-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface text-primary">
                     <AppIcon name="speed" className="h-5 w-5" />
                   </span>
                   <div>
@@ -1447,7 +1447,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                   type="button"
                   onClick={() => setEditingRange((editing) => !editing)}
                   aria-label={editingRange ? "Finish editing car range" : "Edit car range"}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-secondary text-primary transition hover:border-primary"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-surface text-primary transition hover:border-border"
                 >
                   <AppIcon name={editingRange ? "check" : "edit"} className="h-[1.2rem] w-[1.2rem]" />
                 </button>
@@ -1462,7 +1462,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                     step="1"
                     value={rangeKm}
                     onChange={(event) => setRangeKm(event.target.value)}
-                    className="min-h-12 w-full rounded-xl border border-border bg-secondary px-4 pr-14 text-base text-foreground"
+                    className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 pr-14 text-base text-foreground"
                   />
                   <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-muted">km</span>
                 </div>
@@ -1485,7 +1485,7 @@ export function TripPlanner({ stations }: TripPlannerProps) {
                 value={currentChargePercent}
                 onChange={(event) => setCurrentChargePercent(event.target.value)}
                 placeholder="30"
-                className="min-h-12 w-full rounded-xl border border-border bg-secondary px-4 pr-12 text-base text-foreground placeholder:text-muted/70"
+                className="min-h-12 w-full rounded-xl border border-border bg-surface px-4 pr-12 text-base text-foreground placeholder:text-muted/70"
               />
               <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-muted">%</span>
             </div>
@@ -1639,7 +1639,7 @@ function DesktopPreviewStep({
   return (
     <li className="grid grid-cols-[2.5rem_1fr] gap-x-3">
       <div className="flex flex-col items-center">
-        <span className="grid h-9 w-9 place-items-center rounded-full border border-primary/30 bg-secondary text-primary">
+        <span className="grid h-9 w-9 place-items-center rounded-full border border-border bg-surface text-primary">
           <AppIcon name={icon} className="h-[1.1rem] w-[1.1rem]" />
         </span>
         {!last ? <span className="min-h-8 w-px flex-1 bg-border" aria-hidden="true" /> : null}
@@ -1669,10 +1669,10 @@ function TripPlanningLoader() {
               strokeLinejoin="round"
             />
             <path d="M52 33h28v23H41l11-23Zm37 0h24c5 0 9 2 12 7l10 16H89V33Z" className="fill-secondary stroke-current" strokeWidth="3" />
-            <circle cx="48" cy="70" r="11" className="fill-foreground stroke-secondary" strokeWidth="4" />
-            <circle cx="133" cy="70" r="11" className="fill-foreground stroke-secondary" strokeWidth="4" />
+            <circle cx="48" cy="70" r="11" className="fill-foreground stroke-black" strokeWidth="4" />
+            <circle cx="133" cy="70" r="11" className="fill-foreground stroke-black" strokeWidth="4" />
             <path d="m96 39-10 14h10l-6 15 18-21H97l7-8H96Z" className="fill-primary" />
-            <path d="M18 64H4m18-12H9" className="stroke-primary" strokeWidth="4" strokeLinecap="round" />
+            <path d="M18 64H4m18-12H9" className="stroke-black" strokeWidth="4" strokeLinecap="round" />
           </svg>
         </div>
         <div className="mx-auto -mt-2 h-1.5 w-52 overflow-hidden rounded-full bg-border">
@@ -1697,7 +1697,7 @@ function TripSummaryCard({ plan, destinationName }: { plan: TripPlan; destinatio
           icon="route"
           label="Distance"
           value={`${Math.round(plan.totalDistanceKm)} km`}
-          tone="border-primary/25"
+          tone="border-border"
           iconTone="text-primary"
         />
         <TripMetric
@@ -1711,8 +1711,8 @@ function TripSummaryCard({ plan, destinationName }: { plan: TripPlan; destinatio
           icon="ev_station"
           label="Stops"
           value={String(plan.stops.length)}
-          tone="border-amber-300/70"
-          iconTone="text-amber-700"
+          tone="border-border"
+          iconTone="text-primary"
         />
       </div>
       <div className="mt-3 flex items-center justify-center gap-2 text-center text-xs text-muted">
@@ -1773,7 +1773,7 @@ function ChargingItineraryCard({
   return (
     <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-full border border-primary/30 text-primary">
+        <span className="grid h-10 w-10 place-items-center rounded-full border border-border text-primary">
           <AppIcon name="ev_station" className="h-5 w-5" />
         </span>
         <h2 className="text-xl font-bold text-foreground">Charging itinerary</h2>
@@ -1785,8 +1785,8 @@ function ChargingItineraryCard({
           aria-controls="itinerary-details"
           className={`ml-auto grid h-9 w-9 place-items-center rounded-full border transition ${
             showItineraryInfo
-              ? "border-primary bg-primary text-secondary"
-              : "border-border bg-background text-primary hover:border-primary"
+              ? "border-border bg-primary text-secondary"
+              : "border-border bg-background text-primary hover:border-border"
           }`}
         >
           <AppIcon name={showItineraryInfo ? "close" : "read_more"} className="h-5 w-5" />
@@ -1842,7 +1842,7 @@ function ChargingItineraryCard({
                     value={stop.station.id}
                     disabled={changingStopIndex !== null}
                     onChange={(event) => onStopChange(index, event.target.value)}
-                    className="mt-2 min-h-11 w-full rounded-lg border border-border bg-secondary px-3 text-sm text-foreground disabled:cursor-wait disabled:opacity-60"
+                    className="mt-2 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground disabled:cursor-wait disabled:opacity-60"
                   >
                     {alternatives.map((candidate) => (
                       <option key={candidate.station.id} value={candidate.station.id}>
@@ -1914,7 +1914,7 @@ function DepartureAdvice({ plan, destinationName }: { plan: TripPlan; destinatio
   if (plan.currentChargePercent >= recommendedPercent) {
     title = directTrip ? "Ready to go" : "First charger is reachable";
     icon = "check";
-    tone = "border-primary/30";
+    tone = "border-border";
     iconTone = "text-primary";
     message = directTrip
       ? `Your ${plan.currentChargePercent}% battery gives about ${Math.round(availableRangeKm)} km of range. The destination is ${Math.round(firstLegKm)} km away, so you can arrive with at least ${ARRIVAL_RESERVE_PERCENT}% remaining.`
@@ -1922,21 +1922,21 @@ function DepartureAdvice({ plan, destinationName }: { plan: TripPlan; destinatio
   } else if (plan.currentChargePercent >= minimumPercent) {
     title = `Charge to ${recommendedPercent}%`;
     icon = "battery_charging_full";
-    tone = "border-amber-300/70";
-    iconTone = "text-amber-700";
+    tone = "border-border";
+    iconTone = "text-primary";
     message = `You can technically reach ${firstTarget}, but charge to ${recommendedPercent}% before leaving to arrive at or just above ${ARRIVAL_RESERVE_PERCENT}%. Add about ${additionalCharge} percentage points.`;
   } else {
     title = "Charge before leaving";
     icon = "electric_bolt";
-    tone = "border-amber-300/70";
-    iconTone = "text-amber-700";
+    tone = "border-border";
+    iconTone = "text-primary";
     message = `Your current ${plan.currentChargePercent}% gives about ${Math.round(availableRangeKm)} km. Charge to ${recommendedPercent}% before leaving so you can cover the ${Math.round(firstLegKm)} km leg and arrive with at least ${ARRIVAL_RESERVE_PERCENT}%. Add approximately ${additionalCharge} percentage points.`;
   }
 
   return (
     <div className={`mb-4 rounded-xl border bg-background p-4 text-foreground ${tone}`}>
       <div className="flex items-center gap-3">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border border-current/25 ${iconTone}`}>
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border ${iconTone}`}>
           <AppIcon name={icon} className="h-5 w-5" />
         </span>
         <div className="min-w-0">
@@ -1949,13 +1949,13 @@ function DepartureAdvice({ plan, destinationName }: { plan: TripPlan; destinatio
           aria-label={showDetails ? "Hide departure details" : "Read departure details"}
           aria-expanded={showDetails}
           aria-controls="departure-details"
-          className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-primary transition hover:border-primary"
+          className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-primary transition hover:border-border"
         >
           <AppIcon name={showDetails ? "close" : "read_more"} className="h-5 w-5" />
         </button>
       </div>
       {showDetails ? (
-        <p id="departure-details" className="mt-3 border-t border-current/15 pt-3 text-sm leading-6 opacity-80">
+        <p id="departure-details" className="mt-3 border-t border-border pt-3 text-sm leading-6 opacity-80">
           {message}
         </p>
       ) : null}
@@ -1976,7 +1976,7 @@ function DepartureAdvice({ plan, destinationName }: { plan: TripPlan; destinatio
 
 function ChargeMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg bg-secondary/80 px-2 py-2.5 text-center">
+    <div className="min-w-0 rounded-lg bg-surface/80 px-2 py-2.5 text-center">
       <p className="text-[0.65rem] font-semibold uppercase tracking-wide opacity-65">{label}</p>
       <p className="mt-1 text-sm font-bold">{value}</p>
     </div>
@@ -2008,10 +2008,10 @@ function TripMetric({
 function GoogleMapsIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
-      <path fill="#34a853" d="M12 22s7-6.1 7-13A7 7 0 0 0 5 9c0 6.9 7 13 7 13Z" />
-      <path fill="#4285f4" d="M12 12.5A3.5 3.5 0 0 0 15.5 9H19c0 6.9-7 13-7 13v-9.5Z" opacity="0.9" />
-      <path fill="#fbbc04" d="M5 9a7 7 0 0 1 7-7v7H5Z" />
-      <path fill="#ea4335" d="M12 2a7 7 0 0 1 7 7h-7V2Z" />
+      <path fill="#000000" d="M12 22s7-6.1 7-13A7 7 0 0 0 5 9c0 6.9 7 13 7 13Z" />
+      <path fill="#000000" d="M12 12.5A3.5 3.5 0 0 0 15.5 9H19c0 6.9-7 13-7 13v-9.5Z" opacity="0.9" />
+      <path fill="#000000" d="M5 9a7 7 0 0 1 7-7v7H5Z" />
+      <path fill="#000000" d="M12 2a7 7 0 0 1 7 7h-7V2Z" />
       <circle cx="12" cy="9" r="2.4" fill="#fff" />
     </svg>
   );
@@ -2033,8 +2033,8 @@ function ItineraryPoint({
   controls?: ReactNode;
 }) {
   const toneClasses = {
-    start: "border border-primary/30 text-primary",
-    charge: "border border-amber-300/70 text-amber-700",
+    start: "border border-border text-primary",
+    charge: "border border-border text-primary",
     destination: "border border-border text-foreground",
   };
 

@@ -116,7 +116,7 @@ export default async function HomePage() {
             <Link
               key={tool.href}
               href={tool.href}
-              className="group flex min-h-56 flex-col rounded-2xl border border-border bg-surface p-5 transition hover:-translate-y-1 hover:border-primary hover:shadow-lg"
+              className="group flex min-h-56 flex-col rounded-2xl border border-border bg-surface p-5 transition hover:-translate-y-1 hover:border-border hover:shadow-lg"
             >
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-background text-primary">
                 <AppIcon name={tool.icon} className="h-[1.45rem] w-[1.45rem]" />
