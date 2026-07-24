@@ -75,7 +75,7 @@ export function EmailVerifyPanel() {
             type="button"
             onClick={reject}
             disabled={status === "loading"}
-            className="min-h-12 rounded-lg border border-border bg-secondary px-4 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-12 rounded-lg border border-border bg-surface px-4 text-sm font-bold text-foreground transition hover:border-border hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
             No, it’s not me
           </button>

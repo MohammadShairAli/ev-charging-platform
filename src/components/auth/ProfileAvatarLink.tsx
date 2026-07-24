@@ -59,7 +59,7 @@ export function ProfileAvatarLink() {
     <Link
       href={profileHref}
       aria-label="Open profile"
-      className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface-strong text-sm font-bold text-primary transition hover:border-primary sm:h-11 sm:w-11"
+      className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface-strong text-sm font-bold text-primary transition hover:border-border sm:h-11 sm:w-11"
     >
       {avatar ? (
         // eslint-disable-next-line @next/next/no-img-element

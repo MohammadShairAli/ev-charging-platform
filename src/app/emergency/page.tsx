@@ -58,7 +58,7 @@ export default function EmergencyPage() {
               </a>
               <a
                 href="tel:130"
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-5 py-3 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary sm:w-auto"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-5 py-3 text-sm font-bold text-foreground transition hover:border-border hover:text-primary sm:w-auto"
               >
                 <AppIcon name="directions_car" className="h-5 w-5" />
                 Call Motorway Police 130
@@ -78,7 +78,7 @@ export default function EmergencyPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-5 rounded-xl bg-white/80 p-4 text-sm font-semibold leading-6 text-red-950">
+            <div className="mt-5 rounded-xl bg-surface/80 p-4 text-sm font-semibold leading-6 text-red-950">
               Do not approach the vehicle again to collect belongings. Keep people away and wait for trained responders.
             </div>
           </div>
@@ -131,7 +131,7 @@ export default function EmergencyPage() {
               <a
                 key={contact.number}
                 href={`tel:${contact.number}`}
-                className="group flex min-h-44 flex-col rounded-2xl border border-border bg-background p-5 transition hover:-translate-y-1 hover:border-primary hover:shadow-lg"
+                className="group flex min-h-44 flex-col rounded-2xl border border-border bg-background p-5 transition hover:-translate-y-1 hover:border-border hover:shadow-lg"
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-primary text-secondary">
@@ -174,7 +174,7 @@ export default function EmergencyPage() {
             The live closest-station map now appears on the home page. You can also open the complete station finder or build a range-aware route.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <ButtonLink href={ROUTES.home} variant="secondary" className="border-secondary/40 bg-secondary text-primary hover:border-secondary">
+            <ButtonLink href={ROUTES.home} variant="secondary" className="border-secondary/40 bg-surface text-primary hover:border-secondary">
               See closest station
             </ButtonLink>
             <ButtonLink href={ROUTES.planTrip} variant="secondary" className="border-secondary/40 bg-transparent text-secondary hover:border-secondary hover:text-secondary">

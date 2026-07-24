@@ -91,7 +91,7 @@ export function ProfilePanel() {
           </Link>
           <Link
             href={ROUTES.signup}
-            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border bg-secondary px-4 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
+            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-bold text-foreground transition hover:border-border hover:text-primary"
           >
             Sign up
           </Link>
@@ -390,7 +390,7 @@ function EditableProfileForm({
   }
 
   return (
-    <form className="grid gap-4 rounded-lg border border-primary/40 bg-background p-4" onSubmit={saveProfile}>
+    <form className="grid gap-4 rounded-lg border border-border bg-background p-4" onSubmit={saveProfile}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 ">
           <AppIcon  name="manage_accounts" className="h-5 w-5 text-primary cursor-pointer" />
@@ -418,7 +418,7 @@ function EditableProfileForm({
       <ProfileField label="Email" value={email} onChange={setEmail} type="email" required />
       <div className="rounded-lg border border-border bg-background p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-secondary">
+          <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface">
             {avatarPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarPreview} alt="" className="h-full w-full object-cover" />
@@ -446,7 +446,7 @@ function EditableProfileForm({
                     setImage(null);
                     setImageName("");
                   }}
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-bold text-foreground transition hover:border-border hover:text-primary"
                 >
                   <AppIcon name="close" className="h-[1.15rem] w-[1.15rem]" />
                   Remove selection
@@ -468,7 +468,7 @@ function EditableProfileForm({
       </div>
       <p className="text-xs leading-5 text-muted">Changing email sends a verification link to the new address before it becomes active.</p>
 
-      {message ? <p className="rounded-lg border border-primary/40 bg-background p-3 text-sm text-foreground">{message}</p> : null}
+      {message ? <p className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">{message}</p> : null}
       {error ? <p role="alert" className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">{error}</p> : null}
 
       </fieldset>
@@ -551,7 +551,7 @@ function EditableCarsForm({
   }
 
   return (
-    <form className="grid gap-4 rounded-lg border border-primary/40 bg-background p-4" onSubmit={saveCars}>
+    <form className="grid gap-4 rounded-lg border border-border bg-background p-4" onSubmit={saveCars}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <AppIcon name="electric_car" className="h-5 w-5 text-primary" />
@@ -574,8 +574,8 @@ function EditableCarsForm({
       <fieldset className={collapsed ? "hidden" : "grid gap-4"} disabled={saving}>
       <SavedCarsEditor cars={cars} onChange={setCars} />
 
-      {message ? <p className="rounded-lg border border-primary/40 bg-secondary p-3 text-sm text-foreground">{message}</p> : null}
-      {error ? <p role="alert" className="rounded-lg border border-border bg-secondary p-3 text-sm text-foreground">{error}</p> : null}
+      {message ? <p className="rounded-lg border border-border bg-surface p-3 text-sm text-foreground">{message}</p> : null}
+      {error ? <p role="alert" className="rounded-lg border border-border bg-surface p-3 text-sm text-foreground">{error}</p> : null}
 
       </fieldset>
     </form>
@@ -622,7 +622,7 @@ function CollapseButton({
       onClick={onToggle}
       aria-label={`${collapsed ? "Expand" : "Minimize"} ${label}`}
       aria-expanded={!collapsed}
-      className="grid h-10 w-10 place-items-center rounded-full border border-border bg-secondary text-primary transition hover:border-primary"
+      className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface text-primary transition hover:border-border"
     >
       <span className="text-2xl font-medium leading-none" aria-hidden="true">
         {collapsed ? "+" : "−"}
@@ -655,7 +655,7 @@ function ProfileField({
         value={value}
         required={required}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 min-h-12 w-full rounded-lg border border-border bg-secondary px-4 text-base text-foreground"
+        className="mt-2 min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-foreground"
       />
     </div>
   );

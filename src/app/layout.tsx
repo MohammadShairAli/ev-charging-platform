@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { CSSProperties, ReactNode } from "react";
 import { AppChrome } from "@/src/components/layout/AppChrome";
@@ -24,10 +24,14 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: appConfig.theme.colour,
+};
+
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const themeStyle = {
-    "--primary": appConfig.theme.primary,
-    "--secondary": appConfig.theme.secondary,
+    "--theme-colour": appConfig.theme.colour,
   } as CSSProperties;
 
   return (

@@ -40,7 +40,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-[60] px-4 sm:hidden" aria-label="Primary navigation">
-      <div className="mx-auto max-w-[24rem] rounded-t-[1.6rem] border border-border bg-secondary px-3 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2">
+      <div className="mx-auto max-w-[24rem] rounded-t-[1.6rem] border border-border bg-surface px-3 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2">
         <div className="grid grid-cols-3 items-end">
           <MobileTab tab={tabs[0]} active={pathname === ROUTES.home} />
 
@@ -49,7 +49,7 @@ export function MobileBottomNav() {
               href={ROUTES.stations}
               aria-label="Search charging stations"
               aria-current={searchActive ? "page" : undefined}
-              className={`-mt-8 grid h-16 w-16 place-items-center rounded-full border-8 border-secondary transition ${
+              className={`-mt-8 grid h-16 w-16 place-items-center rounded-full border-8 border-border transition ${
                 searchActive ? "bg-primary text-secondary" : "bg-primary text-secondary hover:bg-primary-hover"
               }`}
             >

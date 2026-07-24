@@ -36,27 +36,29 @@ function emailShell({
   buttonUrl: string;
   securityNote: string;
 }) {
+  const themeColour = appConfig.theme.colour;
+
   return `
-    <div style="margin:0;padding:0;background:#f3f7f4;font-family:Arial,sans-serif;color:#111827">
+    <div style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif;color:#000000">
       <div style="max-width:620px;margin:0 auto;padding:28px 16px">
-        <div style="background:#14532D;color:#ffffff;border-radius:14px 14px 0 0;padding:22px 24px">
+        <div style="background:${themeColour};color:#ffffff;border-radius:14px 14px 0 0;padding:22px 24px">
           <p style="margin:0;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">EV Network</p>
           <h1 style="margin:8px 0 0;font-size:24px;line-height:1.25">${title}</h1>
         </div>
-        <div style="background:#ffffff;border:1px solid #d9e3dc;border-top:0;border-radius:0 0 14px 14px;padding:24px">
+        <div style="background:#ffffff;border:1px solid ${themeColour};border-top:0;border-radius:0 0 14px 14px;padding:24px">
           <p style="margin:0 0 16px;font-size:15px;line-height:1.7">${intro}</p>
           <p style="margin:24px 0">
-            <a href="${buttonUrl}" style="background:#14532D;color:#ffffff;text-decoration:none;padding:13px 20px;border-radius:9px;font-weight:700;display:inline-block">
+            <a href="${buttonUrl}" style="background:${themeColour};color:#ffffff;text-decoration:none;padding:13px 20px;border-radius:9px;font-weight:700;display:inline-block">
               ${buttonLabel}
             </a>
           </p>
-          <div style="margin:22px 0;padding:16px;border-radius:12px;background:#eef7f0;border:1px solid #cfe4d5">
+          <div style="margin:22px 0;padding:16px;border-radius:12px;background:#ffffff;border:1px solid ${themeColour}">
             <p style="margin:0;font-size:14px;line-height:1.7">
               EV Network helps drivers find nearby EV chargers, compare running costs, plan safer trips, and keep emergency charging support close when the route gets stressful.
             </p>
           </div>
-          <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#6b7280">${securityNote}</p>
-          <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280">If the button does not work, open this link:<br/><a href="${buttonUrl}" style="color:#14532D">${buttonUrl}</a></p>
+          <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#000000">${securityNote}</p>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:#000000">If the button does not work, open this link:<br/><a href="${buttonUrl}" style="color:${themeColour}">${buttonUrl}</a></p>
           <p style="margin:24px 0 0;font-size:14px;line-height:1.6">
             Drive safe,<br/>
             <strong>Team EV Network</strong>

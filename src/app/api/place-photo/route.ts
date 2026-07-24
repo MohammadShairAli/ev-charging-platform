@@ -8,7 +8,7 @@ type GooglePlaceDetailsResponse = {
   photos?: GooglePlacePhoto[];
 };
 
-const fallbackImagePath = "/ev-hero.png";
+const fallbackImagePath = "/icon.png";
 
 export const dynamic = "force-dynamic";
 

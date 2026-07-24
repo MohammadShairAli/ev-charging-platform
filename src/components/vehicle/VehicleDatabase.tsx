@@ -120,10 +120,10 @@ export function VehicleDatabase({ initialData }: VehicleDatabaseProps) {
             onFocus={() => setSuggestionsOpen(Boolean(trimmedQuery && data.suggestions.length))}
             onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 150)}
             placeholder="Search brand or car name..."
-            className="min-h-12 w-full rounded-lg border border-border bg-secondary px-4 text-base text-foreground placeholder:text-muted/70"
+            className="min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-foreground placeholder:text-muted/70"
           />
           {suggestionsOpen ? (
-            <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-secondary p-1 shadow-xl">
+            <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-xl">
               {data.suggestions.map((suggestion) => (
                 <button
                   key={suggestion}
@@ -147,7 +147,7 @@ export function VehicleDatabase({ initialData }: VehicleDatabaseProps) {
           id="vehicle-category"
           value={activeCategory}
           onChange={(event) => updateCategory(event.target.value as VehicleCategory)}
-          className="min-h-11 rounded-lg border border-border bg-secondary px-3 text-sm font-bold text-foreground"
+          className="min-h-11 rounded-lg border border-border bg-surface px-3 text-sm font-bold text-foreground"
         >
           {categories.map((category) => (
             <option key={category} value={category}>
@@ -161,7 +161,7 @@ export function VehicleDatabase({ initialData }: VehicleDatabaseProps) {
           id="vehicle-sort"
           value={sort}
           onChange={(event) => updateSort(event.target.value as VehicleSort)}
-          className="min-h-11 rounded-lg border border-border bg-secondary px-3 text-sm font-bold text-foreground"
+          className="min-h-11 rounded-lg border border-border bg-surface px-3 text-sm font-bold text-foreground"
         >
           {sortOptions.map((option) => (
             <option key={option.value} value={option.value}>

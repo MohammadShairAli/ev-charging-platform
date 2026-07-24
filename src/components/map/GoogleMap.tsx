@@ -136,14 +136,25 @@ function decodePolyline(encoded: string) {
   return path;
 }
 
-function originMarkerIcon() {
+function originMarkerIcon(themeColour: string) {
   return {
     path: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 5.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z",
-    fillColor: "#166534",
+    fillColor: themeColour,
     fillOpacity: 1,
     strokeColor: "#FFFFFF",
     strokeWeight: 2,
     scale: 1.1,
+  };
+}
+
+function stationMarkerIcon(themeColour: string) {
+  return {
+    path: "M12 2a7 7 0 0 0-7 7c0 6.9 7 13 7 13s7-6.1 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z",
+    fillColor: themeColour,
+    fillOpacity: 1,
+    strokeColor: "#FFFFFF",
+    strokeWeight: 1.5,
+    scale: 1.25,
   };
 }
 
@@ -177,6 +188,10 @@ export function GoogleMap({
 
         const selected = stations.find((station) => station.id === selectedStationId);
         const selectedCoordinates = selected ? stationCoordinates(selected) : null;
+        const themeColour =
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--theme-colour")
+            .trim() || "#bd004f";
         let routePath = suppliedRoutePath?.length
           ? suppliedRoutePath
           : routePolyline
@@ -195,7 +210,7 @@ export function GoogleMap({
             position: routeOrigin,
             map,
             title: "Your location",
-            icon: originMarkerIcon(),
+            icon: originMarkerIcon(themeColour),
           });
         }
 
@@ -233,7 +248,7 @@ export function GoogleMap({
           new window.google.maps.Polyline({
             path: routePath,
             geodesic: true,
-            strokeColor: "#166534",
+            strokeColor: themeColour,
             strokeOpacity: 0.95,
             strokeWeight: 5,
             map,
@@ -261,6 +276,7 @@ export function GoogleMap({
             position: coordinates,
             map,
             title: station.name,
+            icon: stationMarkerIcon(themeColour),
           });
 
           const infoWindow = new window.google.maps.InfoWindow({
@@ -318,7 +334,7 @@ function MapFallback({
 }) {
   return (
     <div className={`ev-map-placeholder relative min-h-[17rem] overflow-hidden rounded-lg border border-border p-4 text-foreground sm:min-h-96 ${className}`}>
-      <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-border bg-secondary p-4">
+      <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-border bg-surface p-4">
         <p className="text-sm font-semibold text-foreground">Map loading</p>
         <p className="mt-1 text-sm leading-6 text-muted">{message}</p>
       </div>
